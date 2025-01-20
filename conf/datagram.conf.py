@@ -1,25 +1,8 @@
 #!/usr/bin/env python3
 from modbus_rtu_slave_rc import *  # Import everything from modbus_generator
 
-# Coils = LED+ (write multiple only)
-# Discrete inputs = Switch state
-# Input register = Active key
-
-# Coil
-# --------------
-# 0 push_door
-# 1 pull_door
-# 2 blast_toolsetter
-# 3 unclamp_chuck
-# 4 blast_spindle
-
-# discrete input
-# --------------
-# 0 Pressure readout
-
-
 Modbus({
-    "buffer_size": 16,
+    "buffer_size": 32,
     "namespace": "patch",
 
     "callbacks": {
