@@ -1,30 +1,16 @@
 #!/usr/bin/env python3
 from modbus_rtu_slave_rc import *  # Import everything from modbus_generator
 
-# Coils = LED+ (write multiple only)
-# Discrete inputs = Switch state
-# Input register = Active key
-
-# Coil
-# --------------
-# 0 push_door
-# 1 pull_door
-# 2 blast_toolsetter
-# 3 unclamp_chuck
-# 4 blast_spindle
-
-# discrete input
-# --------------
-# 0 Pressure readout
-
 
 Modbus({
-    "buffer_size": 16,
-    "namespace": "patch",
+    "mode": "master",        # Tell the generator we're a master
+    "buffer_size": 16,       # Set the buffer size to at least 16 bytes
+    "namespace": "patch",    # The datagram will be patch::Datagram
+    "errback": "on_modbus_error", # Default error callback
 
+    # Prototypes for the reply callbacks
     "callbacks": {
         "on_console_reply"   : [(u8, "switches"), (u8, "push_buttons")],
-        "on_relay_ok"        : [],
         "on_pneumatic_reply" : [(u8, "pressure")],
     },
 
@@ -39,7 +25,7 @@ Modbus({
                                 u16(3), # 3 relays read
                                 u8(1),
                                 u16(alias="data"),
-                                "on_relay_ok"),
+                                None),  # Ignore reply
     ],
 
     # Pneumatic
