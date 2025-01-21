@@ -11,6 +11,7 @@ Modbus({
     "callbacks": {
         "on_console_reply"   : [(u8, "switches"), (u8, "push_buttons")],
         "on_pneumatic_reply" : [(u8, "pressure")],
+        "do_nothing"         : []
     },
 
     # Console
@@ -23,8 +24,7 @@ Modbus({
         (WRITE_MULTIPLE_COILS,  u16(0), # The product write all relays from 0
                                 u16(3), # 3 relays read
                                 u8(1),
-                                u16(alias="data"),
-                                None),  # Ignore reply
+                                u16(alias="data")),  # Ignore reply
     ],
 
     # Pneumatic
