@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from modbus_rtu_slave_rc import *  # Import everything from modbus_generator
 
-
 Modbus({
     "mode": "master",        # Tell the generator we're a master
     "buffer_size": 16,       # Set the buffer size to at least 16 bytes
