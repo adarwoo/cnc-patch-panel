@@ -13,5 +13,10 @@ SRCS = \
 # Inlude the actual build rules
 include asx/make/rules.mak
 
+DATAGRAM = conf/datagram.hpp
+
 # Add dependency to generate the datagram from the config
-src/main.cpp : conf/datagram.hpp
+src/main.cpp : $(DATAGRAM)
+
+# Clean the datagram too
+CLEAN_FILES+=$(DATAGRAM)

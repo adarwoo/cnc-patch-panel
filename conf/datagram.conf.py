@@ -5,7 +5,6 @@ Modbus({
     "mode": "master",        # Tell the generator we're a master
     "buffer_size": 16,       # Set the buffer size to at least 16 bytes
     "namespace": "patch",    # The datagram will be patch::Datagram
-    "errback": "on_modbus_error", # Default error callback
 
     # Prototypes for the reply callbacks
     "callbacks": {

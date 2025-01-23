@@ -16,7 +16,7 @@ namespace patch {
    using namespace asx::i2c;
    using namespace asx;
 
-   auto led_fb             = LedFB{0xffff};     // All LEDs on to start with
+   auto led_fb             = LedFB{0xffff};     // All local LEDs on to start with
    auto pneumatic_coils    = PneumaticCoils{0}; // System pneumatic coils
    auto relays             = Relays{0};         // State of the relays
    auto console_leds       = ConsoleLeds{0};    // Console LEDs
@@ -69,6 +69,17 @@ namespace patch {
       // Query the console
       //Datagram::pack(modbus : command_t::custom);
       //Datagram::pack(console_leds.all);
+      #if 0
+      if (relay_needs_update) {
+         // Update the relay
+         Datagram::pack(modbus::command_t::write_multiple_coils);
+         Datagram::pack(0);           // Start address
+         Datagram::pack(3);           // Quantity
+         Datagram::pack<uint8_t>(2);  // Byte count (2*N)
+         Datagram::pack(relays);
+         Datagram::pack(pneumatic_coils.all);
+      }
+      #endif
    }
 
    void on_console_reply(uint8_t switches, uint8_t key) {
@@ -90,18 +101,8 @@ namespace patch {
    /**
     * Called when the modbus
     */
-   void on_pneumatic_reply() {
-      #if 0
-      if (relay_needs_update) {
-         // Update the relay
-         Datagram::pack(modbus::command_t::write_multiple_coils);
-         Datagram::pack(0);           // Start address
-         Datagram::pack(3);           // Quantity
-         Datagram::pack<uint8_t>(2);  // Byte count (2*N)
-         Datagram::pack(relays);
-         Datagram::pack(pneumatic_coils.all);
-      }
-      #endif
+   void on_pneumatic_reply(uint8_t switch_state) {
+      pressure_in = switch_state;
    }
 
    void init() {
