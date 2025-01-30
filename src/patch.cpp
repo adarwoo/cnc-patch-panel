@@ -6,6 +6,8 @@
 #include <cstdint>
 
 #include "conf_board.h"
+#include "conf_modbus.hpp"
+
 #include "datagram.hpp"
 
 #include "patch.hpp"
@@ -19,18 +21,23 @@ namespace patch {
    auto led_fb             = LedFB{0xffff};     // All local LEDs on to start with
    auto pneumatic_coils    = PneumaticCoils{0}; // System pneumatic coils
    auto relays             = Relays{0};         // State of the relays
+   auto isolated_outputs   = IsolatedOutputs{0};// State of the isolated outputs
    auto console_leds       = ConsoleLeds{0};    // Console LEDs
    auto iomux_in           = PCA9555(0);        // IOMux 0 For input pins
    auto iomux_led          = PCA9555(2);        // IOMux 2 For LEDs
    auto pressure_in        = bool{false};       // State of the pressure
    auto error_flag         = bool{false};       // Error detected
-   auto relay_needs_update = bool{false};       // True if the relay should be changed
    auto last_know_switches = Switches{0};       // Current switch pushed
 
    // Reactor handles
    reactor::Handle react_on_i2c_ready;
    reactor::Handle react_on_poll;
+   reactor::Handle react_to_query_console;
+   reactor::Handle react_to_query_pneumatic;
+   reactor::Handle react_to_set_relay;
+   reactor::Handle react_to_set_isolated_outputs;
 
+   // i2c state machine
    struct InitPCA {
       auto operator()() {
          using namespace boost::sml;
@@ -64,22 +71,60 @@ namespace patch {
       }
    }
 
-   /// @brief called every 25ms to sample the console, this may be followed by calls to other modbus devices
+   /// @brief called every 25ms to sample the console and pneumatic (every 100ms)
+   ///   this may be followed by calls to other modbus devices
    void on_modbus_cycle() {
-      // Query the console
-      //Datagram::pack(modbus : command_t::custom);
-      //Datagram::pack(console_leds.all);
-      #if 0
-      if (relay_needs_update) {
-         // Update the relay
-         Datagram::pack(modbus::command_t::write_multiple_coils);
-         Datagram::pack(0);           // Start address
-         Datagram::pack(3);           // Quantity
-         Datagram::pack<uint8_t>(2);  // Byte count (2*N)
-         Datagram::pack(relays);
-         Datagram::pack(pneumatic_coils.all);
+      static uint8_t prescaler = 0;
+      static auto current_relays_value = Relays{0};
+      static auto current_iso_value = IsolatedOutputs{0};
+
+      // Request bus to transmit to the console
+      patch::modbus_master::request_to_send(react_to_query_console);
+
+      if ( ++prescaler == 4 ) {
+         patch::modbus_master::request_to_send(react_to_query_pneumatic);
       }
-      #endif
+
+      if ( current_relays_value.all != relays.all ) {
+         patch::modbus_master::request_to_send(react_to_set_relay);
+         current_relays_value.all = relays.all;
+      }
+
+      if ( current_iso_value.all != isolated_outputs.all ) {
+         patch::modbus_master::request_to_send(react_to_set_isolated_outputs);
+         current_iso_value.all = isolated_outputs.all;
+      }
+   }
+
+   /// Create a modbus master payload to query (read and write) the console
+   void query_console() {
+      // Update the Leds. The reply contains the switches and push button state
+      Datagram::pack(modbus::command_t::custom);
+      Datagram::pack(led_fb.all);
+   }
+
+   void query_pneumatic() {
+      // Update the pneumatic coils and get the pressure readout
+      Datagram::pack(modbus::command_t::custom);
+      Datagram::pack(pneumatic_coils.all);      
+   }
+
+   void set_relay() {
+      // Update the relay
+      Datagram::pack(modbus::command_t::write_multiple_coils);
+      Datagram::pack(0);           // Start address
+      Datagram::pack(3);           // Quantity
+      Datagram::pack<uint8_t>(2);  // Byte count (2*N)
+      Datagram::pack(relays.all);
+   }
+
+   void set_isolated_outputs() {
+      // Update the relay
+      Datagram::pack(modbus::command_t::write_multiple_coils);
+      Datagram::pack(0);           // Start address
+      Datagram::pack(3);           // Quantity
+      Datagram::pack<uint8_t>(2);  // Byte count (2*N)
+      Datagram::pack(isolated_outputs.all);
    }
 
    void on_console_reply(uint8_t switches, uint8_t key) {
@@ -91,11 +136,9 @@ namespace patch {
       // Write the switches to the relay and masso
       auto latest_sw = Switches{switches};
 
-      if (last_know_switches.bits.cool != latest_sw.bits.cool || last_know_switches.bits.dust != latest_sw.bits.dust) {
-         relay_needs_update = true;
-         relays.bits.dust = latest_sw.bits.dust;
-         relays.bits.cool = latest_sw.bits.cool;
-      }
+      relays.bits.dust = latest_sw.bits.dust;
+      relays.bits.cool = latest_sw.bits.cool;
+      isolated_outputs.bits.release = latest_sw.bits.release;
    }
 
    /**
@@ -106,10 +149,19 @@ namespace patch {
    }
 
    void init() {
-      react_on_i2c_ready = reactor::bind(on_i2c_ready);
-      react_on_poll = reactor::bind(on_poll_input);
+      using namespace std::chrono;
+
+      react_on_i2c_ready            = reactor::bind(on_i2c_ready);
+      react_on_poll                 = reactor::bind(on_poll_input);
+      react_to_query_console        = reactor::bind(query_console);
+      react_to_query_pneumatic      = reactor::bind(query_pneumatic);
+      react_to_set_relay            = reactor::bind(set_relay);
+      react_to_set_isolated_outputs = reactor::bind(set_isolated_outputs);
 
       i2c::Master::init(400_KHz);
       i2c_sequencer.process_event(start{});
+
+      // Start the modbus cycle in 2 seconds (to match with when the LEDs turn off)
+      reactor::bind(on_modbus_cycle).repeat(2s, 25ms);
    }
 }  // namespace patch

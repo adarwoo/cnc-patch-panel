@@ -17,6 +17,14 @@ namespace patch {
       } bits;
    };
 
+   union IsolatedOutputs {
+      uint16_t all;
+      struct {
+         uint16_t release : 1;
+         uint16_t spare : 2;
+      } bits;
+   };
+
    union Switches {
       uint16_t all;
       struct {

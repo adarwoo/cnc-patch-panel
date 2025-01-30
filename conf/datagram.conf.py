@@ -10,7 +10,6 @@ Modbus({
     "callbacks": {
         "on_console_reply"   : [(u8, "switches"), (u8, "push_buttons")],
         "on_pneumatic_reply" : [(u8, "pressure")],
-        "do_nothing"         : []
     },
 
     # Console
