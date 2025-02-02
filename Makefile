@@ -1,6 +1,6 @@
 TOP:=.
 ARCH:=attiny3227
-BIN:=cnc_patch_panel
+BIN:=patch_panel
 INCLUDE_DIRS:=conf src
 
 ASX_USE:=pca9555 modbus_rtu
@@ -17,6 +17,3 @@ DATAGRAM = conf/datagram.hpp
 
 # Add dependency to generate the datagram from the config
 src/main.cpp : $(DATAGRAM)
-
-# Clean the datagram too
-CLEAN_FILES+=$(DATAGRAM)

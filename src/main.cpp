@@ -2,11 +2,13 @@
  * Console modbus device main entry point.
  */
 #include <asx/reactor.hpp>
-#include "conf_modbus.hpp"
+#include "patch.hpp"
+
 
 int main()
 {
-   patch::modbus_master::init();
+   // Initialse the patch management (i2c, gpio and modbus sequencer)
+   patch::init();
 
    // Run the reactor/scheduler
    asx::reactor::run();
