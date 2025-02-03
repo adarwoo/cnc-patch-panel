@@ -3,7 +3,7 @@ ARCH:=attiny3227
 BIN:=patch_panel
 INCLUDE_DIRS:=conf src
 
-ASX_USE:=pca9555 modbus_rtu
+ASX_USE:=pca9555 modbus_rtu trace
 
 # Project own files
 SRCS = \
