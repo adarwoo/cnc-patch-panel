@@ -86,6 +86,8 @@ namespace patch {
       static auto current_iso_value = IsolatedOutputs{0};
 
       // Request bus to transmit to the console
+      trace("Request to send %u", static_cast<uint8_t>(react_to_query_console));
+
       patch::modbus_master::request_to_send(react_to_query_console);
 #if 0
       if ( ++prescaler == 4 ) {
@@ -160,8 +162,8 @@ namespace patch {
       using namespace std::chrono;
 
       react_on_poll                 = reactor::bind(on_poll_input);
-      react_to_query_console        = reactor::bind(query_console,        reactor::prio::high);
       react_to_query_pneumatic      = reactor::bind(query_pneumatic,      reactor::prio::high);
+      react_to_query_console        = reactor::bind(query_console,        reactor::prio::high);
       react_to_set_relay            = reactor::bind(set_relay,            reactor::prio::high);
       react_to_set_isolated_outputs = reactor::bind(set_isolated_outputs, reactor::prio::high);
 
