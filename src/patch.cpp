@@ -85,9 +85,6 @@ namespace patch {
       static auto current_relays_value = Relays{0};
       static auto current_iso_value = IsolatedOutputs{0};
 
-      // Request bus to transmit to the console
-      trace("Request to send %u", static_cast<uint8_t>(react_to_query_console));
-
       patch::modbus_master::request_to_send(react_to_query_console);
 #if 0
       if ( ++prescaler == 4 ) {
