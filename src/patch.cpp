@@ -7,6 +7,8 @@
 #include <asx/pca9555.hpp>
 #include <asx/reactor.hpp>
 
+#include <trace.h>
+
 #include "conf_board.h"
 #include "conf_modbus.hpp"
 #include "datagram.hpp"
@@ -81,12 +83,14 @@ namespace patch {
    /// @brief called every 25ms to sample the console and pneumatic (every 100ms)
    ///   this may be followed by calls to other modbus devices
    void on_modbus_cycle() {
+      #if 0
       static uint8_t prescaler = 0;
       static auto current_relays_value = Relays{0};
       static auto current_iso_value = IsolatedOutputs{0};
+      #endif
 
       // Request bus to transmit to the console
-      trace("Request to send %u", static_cast<uint8_t>(react_to_query_console));
+      TRACE_INFO(PATCH, "Request to send %u", static_cast<uint8_t>(react_to_query_console));
 
       patch::modbus_master::request_to_send(react_to_query_console);
 #if 0
