@@ -6,6 +6,10 @@
 
 #include "conf_board.h"
 
+#ifndef DOMAIN_PATCH_ENABLED
+#  define DOMAIN_PATCH_ENABLED 0
+#endif
+
 namespace patch {
    // Define a union to combine uint16_t with bitfields
    union Relays {
