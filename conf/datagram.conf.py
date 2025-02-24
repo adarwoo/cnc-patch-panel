@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from modbus_rtu_slave_rc import *  # Import everything from modbus_generator
+from modbus_rtu_rc import *  # Import everything from modbus_generator
 
 Modbus({
     "mode": "master",        # Tell the generator we're a master
