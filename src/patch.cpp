@@ -21,7 +21,6 @@ namespace patch {
    using namespace asx::i2c;
    using namespace asx;
 
-
    // Reactor handles
    reactor::Handle react_on_poll;
    reactor::Handle react_to_query_console;
@@ -70,7 +69,9 @@ namespace patch {
    }
 
    void on_poll_input() {
-      i2c_sequencer.process_event(polling{});
+      if ( i2c::Master::is_idle() ) {
+         i2c_sequencer.process_event(polling{});
+      }
    }
 
    /// @brief Called every 250ms
@@ -113,18 +114,27 @@ namespace patch {
    /// Create a modbus master payload to query (read and write) the console
    void query_console() {
       // Update the Leds. The reply contains the switches and push button state
-      Datagram::pack(modbus::command_t::custom);
-      Datagram::pack(led_fb.all);
+      Datagram::pack(console_address);
+      //Datagram::pack(modbus::command_t::custom);
+      //Datagram::pack(0);
+      Datagram::pack(modbus::command_t::write_multiple_coils);
+      Datagram::pack<uint16_t>(0);
+      Datagram::pack<uint16_t>(6);
+      Datagram::pack<uint16_t>(1);
+      Datagram::pack<uint16_t>(0);
+      
    }
 
    void query_pneumatic() {
       // Update the pneumatic coils and get the pressure readout
+      Datagram::pack(pneumatic_relay_address);
       Datagram::pack(modbus::command_t::custom);
       Datagram::pack(pneumatic_coils.all);
    }
 
    void set_relay() {
       // Update the relay
+      Datagram::pack(relay_address);
       Datagram::pack(modbus::command_t::write_multiple_coils);
       Datagram::pack(0);           // Start address
       Datagram::pack(3);           // Quantity
