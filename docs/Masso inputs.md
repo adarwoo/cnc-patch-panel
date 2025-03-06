@@ -1,53 +1,130 @@
+## Wiring guide
+
+This is the list of connectors, functions and connections.
+
 ### List of Masso inputs of interest
 
-   | Function Type | J#-# | PCA# | Masso input# | Function        |
-   |---------------|------|------|----|---------------------------|
-   | Button input  | J7-1 | 0    | 07 | Cycle Start Button Input  |
-   | Button input  | J7-2 | 1    | 08 | Home Machine Input        |
-   | Button input  | J7-3 | 2    | 09 | Stop Button Input         |
-   | Button input  | J7-4 | 3    | 10 | Go to Home Machine        |
-   | Button input  | J7-5 | 4    | 11 | Go to Parking Position    |
-   | Button input  | J7-6 | 5    | 12 | Chuck Clamp/Unclamp       |
-
-   | Button input  | J8-1 | 6    | 13 | Door Open/Close           |
-   | Button input  | J8-2 | 8    | 14 | Autoload G-Code 1         |
-   | Button input  | J8-3 | 9    | 15 | Autoload G-Code 2         |
-   | Button input  | J8-4 | 10   | 16 | Autoload G-Code 3         |
-   | Button input  | ---  | --   | ?? | Autoload G-Code 4         |
-   | Button input  | ---  | --   | ?? | Autoload G-Code 5         |
-   | Button input  | ---  | --   | ?? | Autoload G-Code 6         |
-   | Sensor input  | J8-5 | 12   | 17 | Door Sensor Input         |
-   | Alarm         | J8-6 | 13   | 18 | Air Pressure Low Alarm    |
-
-   | X-limit       | N/A  | N/A  | 01 | Limit switch              |
-   | Y-limit       | N/A  | N/A  | 02 | Limit switch              |
-   | Z-limit       | N/A  | N/A  | 03 | Limit switch              |
-   | Probe input   | N/A  | N/A  | 04 | Touch probe               |
-   | Setter        | N/A  | N/A  | 05 | Tool Setter               |
-   | NC            | N/A  | N/A  | 06 | -                         |
-
-   | Alarm         | N/A  | N/A  | 19 | Spindle Coolant Flw Alarm |
-   | Alarm         | N/A  | N/A  | 20 | Spindle Motor Alarm       |
-   | Alarm         | N/A  | N/A  | 21 | X Motor Alarm             |
-   | Alarm         | N/A  | N/A  | 22 | Y Motor Alarm             |
-   | Alarm         | N/A  | N/A  | 23 | Z Motor Alarm             |
-   | NC            | N/A  | N/A  | 24 | -                         |
+   | MASSO In# | Function Type             | Type         | To#  |
+   |-----------|---------------------------|--------------|------|
+   | (1-1/6) 1 | X-limit                   | Limit switch | -    |
+   | (1-2/6) 2 | Y-limit                   | Limit switch | -    |
+   | (1-3/6) 3 | Z-limit                   | Limit switch | -    |
+   | (1-4/6) 4 | Probe input               | Touch probe  |      |
+   | (1-5/6) 5 | Tool setter               | Tool Setter  |      |
+   | (1-6/6) 6 | Spindle Coolant Flw Alarm | Alarm        |      |
+   | (2-1/6) 7 | Spindle Motor Alarm       | Alarm        |      |
+   | (2-2/6) 8 | X Motor Alarm             | Alarm        |      |
+   | (2-3/6) 9 | Y Motor Alarm             | Alarm        |      |
+   | (2-4/6)10 | Z Motor Alarm             | Alarm        |      |
+   | (2-5/6)11 | -                         | -            |      |
+   | (2-6/6)12 | -                         | -            |      |
+   | (3-1/6) 1 | Cycle Start Input         | Button       | J1-1 |
+   | (3-2/6) 2 | Home Machine Input        | Button       | J1-2 |
+   | (3-3/6) 3 | Stop Button Input         | Button       | J1-3 |
+   | (3-4/6) 4 | Go to Home Machine        | Button       | J1-4 |
+   | (3-5/6) 5 | Go to Parking Position    | Button       | J1-5 |
+   | (3-6/6) 6 | Chuck Clamp/Unclamp       | Button       | J1-6 |
+   | (4-1/6) 7 | Door Open/Close           | Button       | J2-1 |
+   | (4-2/6) 8 | Autoload G-Code 1         | Button       | J2-2 |
+   | (4-3/6) 9 | Autoload G-Code 2         | Button       | J2-3 |
+   | (4-4/6)10 | Autoload G-Code 3         | Button       | J2-4 |
+   | (4-5/6)11 | Door Sensor Input         | Sensor       | J2-5 |
+   | (4-6/6)12 | Air Pressure Low Alarm    | Alarm        | J2-6 |  
 
 
 ### List of Masso outputs of interrest
 
-   | Func Function Type  | J#-# | Masso output# | Function       |
-   |---------------------|------|----|---------------------------|
-   | 1  | 7  | Led       | J3-7 | 13 | Tower Light Red           | OC
-   | 2  | 8  | Led       | J3-6 | 14 | Tower Light Yellow        | OC
-   | 3  | 9  | Led       | J3-5 | 15 | Tower Light Green         | OC
-   | 4  | 10 | Door      | J3-4 | 16 | Door Open/Close           |
-   | 5  | 11 | Pneumatic | J3-3 | 17 | Tool Air Blast Cleaning   |
-   | 6  | 12 | Pneumatic | J3-2 | 18 | Chuck Clamp.              |
-   | -- | 13 | N/C       |      | -- | --                        |
-   | 7  | 14 | Sound     | J5-6 |  7 | Touch Screen Beep Output  |
-   | 8  | 15 | Sound     | J5-5 |  8 | Sounder                   |
-   | 9  | 16 | Spare1    | J5-4 |  9 | [Light On / Off]          | OC
-   | 10 | 17 | Spare2    | J5-3 | 10 | [Laser Crosshair +]       | OC
-   | 11 | 18 | Spare3    | J5-2 | 11 | [Camera-Light On/Off]     | OC
-   | 12 | 19 | ES        | J3-1 | ES | Emergency Stop            | OC
+   | MASSO Out# | Function type            | Type         | To#  | OC#  |
+   |---------------------------------------|--------------|-------------|
+   | (1-1/6)  1 | Tower Light Red          | Indicator    | J3-1 | J5-1 |
+   | (1-2/6)  2 | Tower Light Yellow       | Indicator    | J3-2 | J5-2 |
+   | (1-3/6)  3 | Tower Light Green        | Indicator    | J3-3 | J5-3 |
+   | (1-4/6)  4 | Door Open/Close          | Command      | J3-4 | -    |
+   | (1-5/6)  5 | Tool Air Blast Cleaning  | Pneumatic    | J3-5 | -    |
+   | (1-6/6)  6 | Chuck Clamp              | Pneumatic    | J3-6 | -    |
+   | (2-1/7)  7 | --                       | --           | J4-1 | -    |
+   | (2-2/7)  8 | Touch Screen Beep Output | Sound        | J4-2 | -    |
+   | (2-3/7)  9 | Sounder                  | Sound        | J4-3 | -    |
+   | (2-4/7) 10 | [Light On / Off]         | Spare1       | J4-4 | J5-4 |
+   | (2-5/7) 11 | [Laser Crosshair +]      | Spare2       | J4-5 | J5-5 |
+   | (2-6/7) 12 | [Camera-Light On/Off]    | Spare3       | J4-6 | J5-6 |
+   | (2-7/7) ES | Emergency Stop           | ES           | J4-7 | J5-7 |
+
+
+### List of CNC Center OC outputs
+
+   |---------------------------------|
+   | J#-# | Function                 |
+   |---------------------------------|
+   | J5-1 | [Tower Light Red]        |
+   | J5-2 | [Tower Light Yellow]     |
+   | J5-3 | [Tower Light Green]      |
+   | J5-4 | [Light On / Off]         |
+   | J5-5 | [Laser Crosshair +]      |
+   | J5-6 | [Camera-Light On/Off]    |
+   | J5-7 | Stepper motor release    |
+   | J5-8 | Emergency Stop           |
+   |---------------------------------|
+
+
+### List of CNC Center OC inputs
+
+   |---------------------------------|
+   | J#-# | Door closed              |
+   |---------------------------------|
+   | J6-1 | +24V                     |
+   | J6-2 | NPN Collector in         |
+   | J6-3 | GND                      |
+   |---------------------------------|
+
+   |---------------------------------|
+   | J#-# | Door opened              |
+   |---------------------------------|
+   | J7-1 | +24V                     |
+   | J7-2 | NPN Collector in         |
+   | J7-3 | GND                      |
+   |---------------------------------|
+
+   |---------------------------------|
+   | J#-# | Spindle on (from VFD)    |
+   |---------------------------------|
+   | J8-1 | NPN Collector in         |
+   | J9-2 | GND                      |
+   |---------------------------------|
+
+
+### List of CNC Center TTL inputs
+
+   | Function Type            | J#-# | PCA# |
+   |--------------------------|------|------|
+   | Tower Light Red          | J3-1 | 0    |
+   | Tower Light Yellow       | J3-2 | 1    |
+   | Tower Light Green        | J3-3 | 2    |
+   | Door Open/Close          | J3-4 | 3    |
+   | Tool Air Blast Cleaning  | J3-5 | 4    |
+   | Chuck Clamp              | J3-6 | 5    |
+   | --                       | J4-1 | 8    |
+   | Touch Screen Beep Output | J4-2 | 9    |
+   | Sounder                  | J4-3 | 10   |
+   | [Light On / Off]         | J4-4 | 11   |
+   | [Laser Crosshair +]      | J4-5 | 12   |
+   | [Camera-Light On/Off]    | J4-6 | 13   |
+   | Emergency Stop           | J4-7 | 14   |
+
+### List of CNC Center TTL outputs
+
+   | Function Type            | J#-# | PCA# |
+   |--------------------------|------|------|
+   | Cycle Start Button Input | J1-1 | 0    |
+   | Home Machine Input       | J1-2 | 1    |
+   | Stop Button Input        | J1-3 | 2    |
+   | Go to Home Machine       | J1-4 | 3    |
+   | Go to Parking Position   | J1-5 | 4    |
+   | Chuck Clamp/Unclamp      | J1-6 | 5    |
+   | Door Open/Close          | J2-1 | 6    |
+   | Autoload G-Code 1        | J2-2 | 8    |
+   | Autoload G-Code 2        | J2-3 | 9    |
+   | Autoload G-Code 3        | J2-4 | 10   |
+   | Door Sensor Input        | J2-5 | 14   |
+   | Air Pressure Low Alarm   | J2-6 | 15   |
+
