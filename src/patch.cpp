@@ -84,8 +84,8 @@ namespace patch {
    /// @brief called every 25ms to sample the console and pneumatic (every 100ms)
    ///   this may be followed by calls to other modbus devices
    void on_modbus_cycle() {
-      #if 0
       static uint8_t prescaler = 0;
+      #if 0
       static auto current_relays_value = Relays{0};
       static auto current_iso_value = IsolatedOutputs{0};
       #endif
@@ -93,7 +93,13 @@ namespace patch {
       // Request bus to transmit to the console
       TRACE_INFO(PATCH, "Request to send %u", static_cast<uint8_t>(react_to_query_console));
 
-      patch::modbus_master::request_to_send(react_to_query_console);
+      if ( ++prescaler == 4 ) 
+      {
+         patch::modbus_master::request_to_send(react_to_query_console);
+         prescaler = 0;
+      }         
+         
+       
 #if 0
       if ( ++prescaler == 4 ) {
          patch::modbus_master::request_to_send(react_to_query_pneumatic);
@@ -113,16 +119,12 @@ namespace patch {
 
    /// Create a modbus master payload to query (read and write) the console
    void query_console() {
+      static uint16_t chaser = 15;
       // Update the Leds. The reply contains the switches and push button state
       Datagram::pack(console_address);
-      //Datagram::pack(modbus::command_t::custom);
-      //Datagram::pack(0);
-      Datagram::pack(modbus::command_t::write_multiple_coils);
-      Datagram::pack<uint16_t>(0);
-      Datagram::pack<uint16_t>(6);
-      Datagram::pack<uint16_t>(1);
-      Datagram::pack<uint16_t>(0);
-      
+      Datagram::pack(modbus::command_t::custom);
+      Datagram::pack(chaser << 1);
+      if ( chaser == 0b100000 ) chaser=1;
    }
 
    void query_pneumatic() {
