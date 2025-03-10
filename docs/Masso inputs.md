@@ -29,13 +29,13 @@ This is the list of connectors, functions and connections.
    | (4-3/6) 9 | Autoload G-Code 2         | Button       | J2-3 |
    | (4-4/6)10 | Autoload G-Code 3         | Button       | J2-4 |
    | (4-5/6)11 | Door Sensor Input         | Sensor       | J2-5 |
-   | (4-6/6)12 | Air Pressure Low Alarm    | Alarm        | J2-6 |  
+   | (4-6/6)12 | Air Pressure Low Alarm    | Alarm        | J2-6 |
 
 
 ### List of Masso outputs of interrest
 
    | MASSO Out# | Function type            | Type         | To#  | OC#  |
-   |---------------------------------------|--------------|-------------|
+   |------------|--------------------------|--------------|------|------|
    | (1-1/6)  1 | Tower Light Red          | Indicator    | J3-1 | J5-1 |
    | (1-2/6)  2 | Tower Light Yellow       | Indicator    | J3-2 | J5-2 |
    | (1-3/6)  3 | Tower Light Green        | Indicator    | J3-3 | J5-3 |
@@ -53,9 +53,8 @@ This is the list of connectors, functions and connections.
 
 ### List of CNC Center OC outputs
 
-   |---------------------------------|
    | J#-# | Function                 |
-   |---------------------------------|
+   |------|--------------------------|
    | J5-1 | [Tower Light Red]        |
    | J5-2 | [Tower Light Yellow]     |
    | J5-3 | [Tower Light Green]      |
@@ -64,33 +63,31 @@ This is the list of connectors, functions and connections.
    | J5-6 | [Camera-Light On/Off]    |
    | J5-7 | Stepper motor release    |
    | J5-8 | Emergency Stop           |
-   |---------------------------------|
-
 
 ### List of CNC Center OC inputs
 
-   |---------------------------------|
+#### Door closed sensor
+
    | J#-# | Door closed              |
-   |---------------------------------|
+   |------|--------------------------|
    | J6-1 | +24V                     |
    | J6-2 | NPN Collector in         |
    | J6-3 | GND                      |
-   |---------------------------------|
 
-   |---------------------------------|
+#### Door opened sensor
+
    | J#-# | Door opened              |
-   |---------------------------------|
+   |------|--------------------------|
    | J7-1 | +24V                     |
    | J7-2 | NPN Collector in         |
    | J7-3 | GND                      |
-   |---------------------------------|
 
-   |---------------------------------|
+#### Spindle on from VFD
+
    | J#-# | Spindle on (from VFD)    |
-   |---------------------------------|
+   |------|--------------------------|
    | J8-1 | NPN Collector in         |
-   | J9-2 | GND                      |
-   |---------------------------------|
+   | J8-2 | GND                      |
 
 
 ### List of CNC Center TTL inputs
@@ -128,3 +125,21 @@ This is the list of connectors, functions and connections.
    | Door Sensor Input        | J2-5 | 14   |
    | Air Pressure Low Alarm   | J2-6 | 15   |
 
+### LEDs
+
+   | D#  | Color  | Function Type           | Comment | PCA# |
+   |-----|--------|-------------------------|---------|------|
+   | D5  |<span style="color: green;">green</span>  |OC in door opened       |         | 0    |
+   | D6  |<span style="color: green;">green</span>  |OC in door closed       |         | 1    |
+   | D7  |<span style="color: green;">green</span>  |OC in spindle is on	  |         | 2    |
+   | D8  |<span style="color: green;">green</span>  |OC in spare	           |         | 3    |
+   | D9  |<span style="color: yellow;">yellow</span>|OC out release steppers |         | 4    |
+   | D10 |<span style="color: yellow;">yellow</span>|OC ES                   |         | 5    |
+   | D11 |<span style="color: green;">green</span>  |Comm stat relay         | on=ok<br/>blink=error<br/>off=down | 6 |
+   | D12 |<span style="color: green;">green</span>  |Comm stat Hub           |         | 7    |
+   | D13 |<span style="color: green;">green</span>  |Comm stat Console       |         | 8    |
+   | D14 |<span style="color: red;">red</span>      |Low pressure            |         | 9    |
+   | D15 |<span style="color: orange;">orange</span>|Air Blast	              |         | 10   |
+   | D16 |<span style="color: orange;">orange</span>|Spindle clean           |         | 11   |
+   | D17 |<span style="color: green;">green</span>  |Door opening status     | blink=opening<br/>on=error | 12 |
+   | D18 |<span style="color: orange;">orange</span>|Door closing status     |         | 13   |
