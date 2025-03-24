@@ -136,10 +136,6 @@ namespace modbus {
       react_to_set_relay            = reactor::bind(set_relay,            reactor::prio::high);
       react_to_set_isolated_outputs = reactor::bind(set_isolated_outputs, reactor::prio::high);
 
-      i2c::Master::init(400_KHz);
-      i2c::Master::request(react_on_init_i2c_devices);
-      i2c_sequencer.process_event(start{});
-
       // Start the modbus cycle in 2 seconds (to match with when the LEDs turn off)
       modbus_master::init();
       reactor::bind(on_modbus_cycle).repeat(2s, 100ms);

@@ -1,10 +1,16 @@
 #include <chrono>
+#include <array>
+
 #include <asx/reactor.hpp>
+#include <asx/timer.hpp>
 #include <asx/pca9555.hpp>
 
 #include "iomux.hpp"
 
 using namespace asx;
+using std::chrono;
+
+constexpr auto BLINK_PERIOD = 500ms;
 
 namespace iomux
 {
@@ -28,7 +34,7 @@ namespace iomux
    }
 
    // Callback to invoke when the input is updated
-   static ProcessInputCb process_cb = nullptr;
+   static auto react_on_input_change  = reactor::null;
 
    // Forward declaration
    static void on_refresh();
@@ -39,6 +45,15 @@ namespace iomux
    static auto iomux_out = i2c::PCA9555(0);        // IOMux 0 For input pins
    static auto iomux_in  = i2c::PCA9555(6);        // IOMux 6 For input pins
    static auto iomux_led = i2c::PCA9555(1);        // IOMux 1 For LEDs
+
+   // Compute the delta
+   auto prev_inputs = Inputs{0};
+
+   // Manage blinking for all LEDs
+   auto led_blink_next_change = std::array<Led::Id::COUNTOF, timer::time_point>{};
+   
+   // Value of the LED output
+   auto leds_fb = uint16_t{0};
 
    void on_i2c_operation(i2c::status_code_t code) {
       alert_and_stop_if(code != i2c::status_code_t::STATUS_OK);
@@ -58,13 +73,16 @@ namespace iomux
             break;
          case InitStage::update_led:
             inputs.all = iomux_in.get_value<uint16_t>();
-            iomux_led.set_value(leds.all, on_i2c_operation);
+            iomux_led.set_value(leds_fb, on_i2c_operation);
             break;
          case InitStage::update_output:
             iomux_out.set_value(outputs.all, on_i2c_operation);
             break;
          case InitStage::ready:
-            process_cb();
+            Inputs delta = prev_inputs.all ^ inputs.all;
+            if ( delta ) {
+               react_on_input_change(delta);
+            }
             return;
          default:
             alert_and_stop_if(true);
@@ -79,14 +97,71 @@ namespace iomux
 
       if ( status == i2c::status_code_t::STATUS_OK ) {
          stage = InitStage::read_input;
+
+         // Update blinking
+         auto now = timer::now();
+
+         for ( led::Id id=0; id<led::Id::COUNTOF; ++id) {
+            auto next_change = led_blink_next_change[id];
+
+            if ( next_change > now ) {
+               leds_fb ^= mask_of(id);
+               led_blink_next_change[id] = next_change + BLINK_PERIOD;
+            }
+         }
+
+         // Update
          on_i2c_operation(status);
       }
    }
 
-   void init(ProcessInputCb cb) {
+   namespace led {
+      Status state_of(Id id) {
+         if ( led_blink_next_change[id] != timer::time_point{0} ) {
+            return Status::blinks;
+         }
+
+         if ( leds_fb & mask_of(id) ) {
+            return Status::on;
+         }
+
+         return Status::off;
+      }
+
+      void turn_on(Id id) {
+         led_blink_next_change[id] = timer::time_point{0};
+         leds_fb |= mask_of(id);
+      }
+
+      void turn_off(Id id) {
+         led_blink_next_change[id] = timer::time_point{0};
+         leds_fb &= ~mask_of(id);
+      }
+
+      void blink(Id id) {
+         if ( led_blink_next_change[id] == timer::time_point{0} ) {
+            led_blink_next_change[id] = timer::now() + BLINK_PERIOD;
+         }
+
+         leds_fb |= mask_of(id);
+      }
+
+      void set(Id id, Status status) {
+         switch (status) {
+         case on: turn_on(id); break
+         case off: turn_off(id); break;
+         case blink: blink(id); break;
+         default:
+            break;
+         }
+      }
+   }
+
+   void init(reactor::Handle on_change) {
       using namespace asx::i2c;
 
-      process_cb = cb;
+      react_on_input_change = on_change;
+
       i2c::Master::init( 400_KHz );
 
       on_i2c_operation( i2c::Master::get_status() );

@@ -1,41 +1,62 @@
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
+#include <asx/reactor.hpp>
+#include <asx/timer.hpp>
 
 namespace iomux {
    /// @brief Callback for processing the update inputs and outputs
    using ProcessInputCb = void(*)();
+    
+   namespace led {
+      enum class Id : uint8_t {
+         tower_red = 0,
+         tower_yellow,
+         tower_green,
+         laser_cross,
+         cam_light,
+         release_steppers,
+         console,
+         relay,
+         pneumatic_hub,
+         low_pressure,
+         chuck,
+         clean,
+         door_opening,
+         door_closing,
+         COUNTOF
+      };
+   
+      static constexpr uint16_t mask_of[static_cast<uint8_t>(Id::COUNTOF)] = {
+         0b1,        // tower_red
+         0b10,       // tower_yellow
+         0b100,      // tower_green
+         0b1000,     // laser_cross
+         0b10000,    // cam_light
+         0b100000,   // release_steppers
+         0b1000000,  // console
+         0b10000000, // relay
+         0b100000000, // pneumatic_hub
+         0b1000000000, // low_pressure
+         0b10000000000, // chuck
+         0b100000000000, // clean
+         0b1000000000000, // door_opening
+         0b10000000000000 // door_closing
+      }; 
 
-   // Define a union to combine uint16_t with bitfields
-   union Led {
-      uint16_t all;
+      enum class Status : uint8_t {
+         off,
+         on,
+         blinks
+      };
 
-      // First declared is bit0 = D5 (top LED)
-      struct {
-         // OC Monitoring
-         uint16_t tower_red : 1;        // D5
-         uint16_t tower_yellow : 1;     // D6
-         uint16_t tower_green : 1;      // D7
-         uint16_t laser_cross : 1;      // D8
-         uint16_t cam_light : 1;        // D9
-         uint16_t release_steppers : 1; // D10
-
-         // Modbus communication statuses
-         uint16_t console : 1;          // D11
-         uint16_t relay : 1;            // D12
-         uint16_t pneumatic_hub : 1;    // D13
-
-         // Pneumatic monitoring
-         uint16_t low_pressure : 1;     // D14
-         uint16_t chuck : 1;            // D15
-         uint16_t clean : 1;            // D16
-
-         // Door control
-         uint16_t door_opening : 1;     // D17
-         uint16_t door_closing : 1;     // D18
-      } bits;
+      Status state_of(Id);
+      void turn_on(Id);
+      void turn_off(Id);
+      void blink(Id);
+      void set(Id, Status);
    };
-
+  
    /// @brief CNC Center outputs to Masso inputs
    union Outputs {
       uint16_t all;
@@ -88,9 +109,7 @@ namespace iomux {
 
    inline auto outputs = Outputs{0};
 
-   inline auto leds = Led{0};
-
    // Unique function to init the iomux and take case of the i2c
-   void init(ProcessInputCb cb);
+   void init(reactor::Handle);
 
 } // End of mux namespace
