@@ -311,6 +311,12 @@
     <Compile Include="conf\datagram.hpp">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="src\iomux.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\iomux.hpp">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="src\main.cpp">
       <SubType>compile</SubType>
     </Compile>

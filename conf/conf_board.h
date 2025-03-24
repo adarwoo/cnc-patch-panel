@@ -1,19 +1,18 @@
 #pragma once
 
-
 /************************************************************************/
 /* Functional I/Os                                                      */
 /************************************************************************/
-#define MSO_OUT0  asx::ioport::A, 2
-#define MSO_OUT1  asx::ioport::A, 3
-#define MSO_OUT2  asx::ioport::A, 5
-#define MSO_OUT3  asx::ioport::A, 6
-#define MSO_OUT4  asx::ioport::A, 7
-#define MSO_OUT5  asx::ioport::B, 2
-#define MSO_OUT6  asx::ioport::B, 3
-#define MSO_OUT7  asx::ioport::B, 4
-#define MSO_OUT8  asx::ioport::B, 5
-#define MSO_OUT9  asx::ioport::C, 0
-#define MSO_OUT10 asx::ioport::C, 1
-#define MSO_OUT11 asx::ioport::C, 2
-#define MSO_OUT12 asx::ioport::C, 3
+#define ISO_OUT_ES                  asx::ioport::B, 2
+#define ISO_OUT_TOWER_LIGHT_RED     asx::ioport::B, 3
+#define ISO_OUT_TOWER_LIGHT_YELLOW  asx::ioport::B, 4
+#define ISO_OUT_TOWER_LIGHT_GREEN   asx::ioport::A, 5
+#define ISO_OUT_RELEASE_STEPPER     asx::ioport::C, 0
+#define ISO_OUT_LASER_CROSS         asx::ioport::C, 1
+#define ISO_OUT_LASER_CAMERA_LIGHT  asx::ioport::C, 2
+
+// Alert pin
+#define ALERT_OUTPUT_PIN            IOPORT_CREATE_PIN(PORTA, 3)
+
+// Debug pins
+#define DEBUG_REACTOR_IDLE          IOPORT_CREATE_PIN(PORTA, 2)

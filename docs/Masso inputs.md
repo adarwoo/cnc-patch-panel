@@ -9,27 +9,27 @@ This is the list of connectors, functions and connections.
    | (1-1/6) 1 | X-limit                   | Limit switch | -    |
    | (1-2/6) 2 | Y-limit                   | Limit switch | -    |
    | (1-3/6) 3 | Z-limit                   | Limit switch | -    |
-   | (1-4/6) 4 | Probe input               | Touch probe  |      |
-   | (1-5/6) 5 | Tool setter               | Tool Setter  |      |
-   | (1-6/6) 6 | Spindle Coolant Flw Alarm | Alarm        |      |
-   | (2-1/6) 7 | Spindle Motor Alarm       | Alarm        |      |
-   | (2-2/6) 8 | X Motor Alarm             | Alarm        |      |
-   | (2-3/6) 9 | Y Motor Alarm             | Alarm        |      |
-   | (2-4/6)10 | Z Motor Alarm             | Alarm        |      |
-   | (2-5/6)11 | -                         | -            |      |
-   | (2-6/6)12 | -                         | -            |      |
-   | (3-1/6) 1 | Cycle Start Input         | Button       | J1-1 |
-   | (3-2/6) 2 | Home Machine Input        | Button       | J1-2 |
-   | (3-3/6) 3 | Stop Button Input         | Button       | J1-3 |
-   | (3-4/6) 4 | Go to Home Machine        | Button       | J1-4 |
-   | (3-5/6) 5 | Go to Parking Position    | Button       | J1-5 |
-   | (3-6/6) 6 | Chuck Clamp/Unclamp       | Button       | J1-6 |
-   | (4-1/6) 7 | Door Open/Close           | Button       | J2-1 |
-   | (4-2/6) 8 | Autoload G-Code 1         | Button       | J2-2 |
-   | (4-3/6) 9 | Autoload G-Code 2         | Button       | J2-3 |
-   | (4-4/6)10 | Autoload G-Code 3         | Button       | J2-4 |
-   | (4-5/6)11 | Door Sensor Input         | Sensor       | J2-5 |
-   | (4-6/6)12 | Air Pressure Low Alarm    | Alarm        | J2-6 |
+   | (1-4/6) 4 | Probe input               | Touch probe  | -    |
+   | (1-5/6) 5 | Tool setter               | Tool Setter  | -    |
+   | (1-6/6) 6 | Spindle Coolant Flw Alarm | Alarm        | -    |
+   | (2-1/6) 7 | Spindle Motor Alarm       | Alarm        | -    |
+   | (2-2/6) 8 | X Motor Alarm             | Alarm        | -    |
+   | (2-3/6) 9 | Y Motor Alarm             | Alarm        | -    |
+   | (2-4/6)10 | Z Motor Alarm             | Alarm        | -    |
+   | (2-5/6)11 | -                         | -            | -    |
+   | (2-6/6)12 | -                         | -            | -    |
+   | (3-1/6)13 | Cycle Start Input         | Button       | J1-1 |
+   | (3-2/6)14 | Home Machine Input        | Button       | J1-2 |
+   | (3-3/6)15 | Stop Button Input         | Button       | J1-3 |
+   | (3-4/6)16 | Go to Home Machine        | Button       | J1-4 |
+   | (3-5/6)17 | Go to Parking Position    | Button       | J1-5 |
+   | (3-6/6)18 | Chuck Clamp/Unclamp       | Button       | J1-6 |
+   | (4-1/6)19 | Door Open/Close           | Button       | J2-1 |
+   | (4-2/6)20 | Autoload G-Code 1         | Button       | J2-2 |
+   | (4-3/6)21 | Autoload G-Code 2         | Button       | J2-3 |
+   | (4-4/6)22 | Autoload G-Code 3         | Button       | J2-4 |
+   | (4-5/6)23 | Door Sensor Input         | Sensor       | J2-5 |
+   | (4-6/6)24 | Air Pressure Low Alarm    | Alarm        | J2-6 |
 
 
 ### List of Masso outputs of interrest
@@ -53,16 +53,15 @@ This is the list of connectors, functions and connections.
 
 ### List of CNC Center OC outputs
 
-   | J#-# | Function                 |
+   | J5-# | Function                 |
    |------|--------------------------|
    | J5-1 | [Tower Light Red]        |
    | J5-2 | [Tower Light Yellow]     |
    | J5-3 | [Tower Light Green]      |
-   | J5-4 | [Light On / Off]         |
-   | J5-5 | [Laser Crosshair +]      |
-   | J5-6 | [Camera-Light On/Off]    |
-   | J5-7 | Stepper motor release    |
-   | J5-8 | Emergency Stop           |
+   | J5-4 | [Laser Crosshair +]      |
+   | J5-5 | [Camera-Light On/Off]    |
+   | J5-6 | Stepper motor release    |
+   | J5-7 | Emergency Stop           |
 
 ### List of CNC Center OC inputs
 
