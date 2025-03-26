@@ -3,7 +3,7 @@
 #include <asx/uart.hpp>
 #include "datagram.hpp"
 
-namespace patch {
+namespace modbus {
    /** Define the Usart to use by the rs485 */
    using UartConfig = asx::uart::CompileTimeConfig<
       115200,                       // Baudrate

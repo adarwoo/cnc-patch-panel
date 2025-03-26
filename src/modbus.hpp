@@ -1,33 +1,18 @@
 #pragma once
 
 #include <cstdint>
+#include <asx/reactor.hpp>
 
 namespace modbus {
    /// @brief Callback for processing the update inputs and outputs
    using ProcessInputCb = void(*)();
 
    /// @brief Status of a modbus communication
-   struct ModbusComm {
-      enum class ModbusCommStatus : int8_t {
-         error = -2,
-         down = -1,
-         ok = 0,
-         starting = 1
-      } status;
-
-      // Error count
-      uint16_t error_count;
-      uint16_t nocomm_count;
-      uint16_t good_comm_count;
-
-      ///< Update communication stats
-      void report_nocomm();
-      void report_success();
-      void report_error();
-
-      ///< Construt
-      ModbusComm() : status{0}, error_count{0}, nocomm_count{0}, good_comm_count{0} {
-      }
+   enum class CommStatus : int8_t {
+      error = -2,
+      down = -1,
+      ok = 0,
+      starting = 1
    };
 
    // Define a union to combine uint16_t with bitfields
@@ -37,7 +22,7 @@ namespace modbus {
          uint16_t dust : 1; // Bit0
          uint16_t cool : 1;
          uint16_t spare : 1;
-      } bits;
+      };
    };
 
    union Switches {
@@ -47,7 +32,7 @@ namespace modbus {
          uint16_t dust : 1;
          uint16_t release : 1;
          uint16_t door : 1;
-      } bits;
+      };
    };
 
    // Define a union to combine uint16_t with bitfields
@@ -60,7 +45,7 @@ namespace modbus {
          uint16_t door_pull : 1;
          uint16_t chuck_open : 1;
          uint16_t door_push : 1;
-      } bits;
+      };
    };
 
    // Define a union to combine uint16_t with bitfields
@@ -77,16 +62,36 @@ namespace modbus {
          uint16_t dust : 1;
          uint16_t release : 1;
          uint16_t door : 1;
-      } bits;
+      };
    };
 
-   static inline auto relays = Relays{0};
-   static inline auto switches = Switches{0};
-   static inline auto coils = PneumaticCoils{0};
-   static inline auto console_leds = ConsoleLeds{0};
-   static inline auto relay_comms_status = ModbusComm{};
-   static inline auto pneu_comms_status = ModbusComm{};
-   static inline auto console_comms_status = ModbusComm{};
+   enum class Key : uint8_t {
+      None   = 0,  
+      Start  = 1,  
+      Stop   = 2,  
+      Homing = 3,
+      Goto0  = 4,  
+      Park   = 5,  
+      Chuck  = 6,  
+      Door   = 7,  
+      P1     = 8, 
+      P2     = 9, 
+      P3     =10, 
+      P4     =11, 
+      P5     =12, 
+      P6     =13, 
+      P7     =14
+   };
 
-   void init(ProcessInputCb);
+   static inline auto relays                 = Relays{0};
+   static inline auto switches               = Switches{0};
+   static inline auto key                    = Key{Key::None};
+   static inline auto coils                  = PneumaticCoils{0};
+   static inline auto console_leds           = ConsoleLeds{0};
+   static inline auto relay_comms_status     = CommStatus{};
+   static inline auto pneu_comms_status      = CommStatus{};
+   static inline auto console_comms_status   = CommStatus{};
+   static inline auto pressure_in            = bool{false};
+
+   void init(asx::reactor::Handle);
 }  // namespace modbus

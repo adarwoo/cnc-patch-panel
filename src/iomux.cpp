@@ -8,7 +8,7 @@
 #include "iomux.hpp"
 
 using namespace asx;
-using std::chrono;
+using namespace std::chrono;
 
 constexpr auto BLINK_PERIOD = 500ms;
 
@@ -34,7 +34,7 @@ namespace iomux
    }
 
    // Callback to invoke when the input is updated
-   static auto react_on_input_change  = reactor::null;
+   static auto react_on_input_change  = reactor::Handle{};
 
    // Forward declaration
    static void on_refresh();
@@ -50,7 +50,7 @@ namespace iomux
    auto prev_inputs = Inputs{0};
 
    // Manage blinking for all LEDs
-   auto led_blink_next_change = std::array<Led::Id::COUNTOF, timer::time_point>{};
+   auto led_blink_next_change = std::array<timer::steady_clock::time_point, led::COUNT>{};
    
    // Value of the LED output
    auto leds_fb = uint16_t{0};
@@ -79,9 +79,11 @@ namespace iomux
             iomux_out.set_value(outputs.all, on_i2c_operation);
             break;
          case InitStage::ready:
-            Inputs delta = prev_inputs.all ^ inputs.all;
-            if ( delta ) {
-               react_on_input_change(delta);
+            Inputs delta;
+            delta.all = prev_inputs.all ^ inputs.all;
+
+            if ( delta.all ) {
+               react_on_input_change(delta.all);
             }
             return;
          default:
@@ -92,32 +94,18 @@ namespace iomux
       ++stage;
    }
 
-   void on_refresh() {
-      auto status = i2c::Master::get_status();
-
-      if ( status == i2c::status_code_t::STATUS_OK ) {
-         stage = InitStage::read_input;
-
-         // Update blinking
-         auto now = timer::now();
-
-         for ( led::Id id=0; id<led::Id::COUNTOF; ++id) {
-            auto next_change = led_blink_next_change[id];
-
-            if ( next_change > now ) {
-               leds_fb ^= mask_of(id);
-               led_blink_next_change[id] = next_change + BLINK_PERIOD;
-            }
-         }
-
-         // Update
-         on_i2c_operation(status);
-      }
-   }
-
    namespace led {
+      constexpr auto time_zero = 
+         timer::steady_clock::time_point(timer::steady_clock::duration::zero());
+
+      static inline uint16_t mask_of(const Id id) {
+         return masks[static_cast<uint8_t>(id)];
+      }
+   
       Status state_of(Id id) {
-         if ( led_blink_next_change[id] != timer::time_point{0} ) {
+         auto _id = static_cast<uint8_t>(id);
+
+         if ( led_blink_next_change[_id] != time_zero ) {
             return Status::blinks;
          }
 
@@ -128,19 +116,23 @@ namespace iomux
          return Status::off;
       }
 
-      void turn_on(Id id) {
-         led_blink_next_change[id] = timer::time_point{0};
-         leds_fb |= mask_of(id);
-      }
+      void set(Id id, bool onoff) {
+         auto _id = static_cast<uint8_t>(id);
 
-      void turn_off(Id id) {
-         led_blink_next_change[id] = timer::time_point{0};
-         leds_fb &= ~mask_of(id);
+         led_blink_next_change[_id] = time_zero;
+
+         if ( onoff ) {
+            leds_fb |= mask_of(id);
+         } else {
+            leds_fb &= ~mask_of(id);
+         }
       }
 
       void blink(Id id) {
-         if ( led_blink_next_change[id] == timer::time_point{0} ) {
-            led_blink_next_change[id] = timer::now() + BLINK_PERIOD;
+         auto _id = static_cast<uint8_t>(id);
+
+         if ( led_blink_next_change[_id] == time_zero ) {
+            led_blink_next_change[_id] = timer::steady_clock::now() + BLINK_PERIOD;
          }
 
          leds_fb |= mask_of(id);
@@ -148,12 +140,35 @@ namespace iomux
 
       void set(Id id, Status status) {
          switch (status) {
-         case on: turn_on(id); break
-         case off: turn_off(id); break;
-         case blink: blink(id); break;
+         case Status::on:     leds_fb |= id; break; //set(id, true); break;
+         case Status::off:    set(id, false); break;
+         case Status::blinks: blink(id); break;
          default:
             break;
          }
+      }
+   }
+
+   void on_refresh() {
+      auto status = i2c::Master::get_status();
+
+      if ( status == i2c::status_code_t::STATUS_OK ) {
+         stage = InitStage::read_input;
+
+         // Update blinking
+         auto now = timer::steady_clock::now();
+
+         for ( uint8_t id=0; id < led::COUNT; ++id) {
+            auto next_change = led_blink_next_change[id];
+
+            if ( next_change >= now ) {
+               leds_fb ^= led::masks[id];
+               led_blink_next_change[id] = next_change + BLINK_PERIOD;
+            }
+         }
+
+         // Update
+         on_i2c_operation(status);
       }
    }
 

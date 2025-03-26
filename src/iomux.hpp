@@ -26,8 +26,10 @@ namespace iomux {
          door_closing,
          COUNTOF
       };
+
+      constexpr auto COUNT = static_cast<uint8_t>(Id::COUNTOF);
    
-      static constexpr uint16_t mask_of[static_cast<uint8_t>(Id::COUNTOF)] = {
+      static constexpr uint16_t masks[COUNT] = {
          0b1,        // tower_red
          0b10,       // tower_yellow
          0b100,      // tower_green
@@ -51,10 +53,12 @@ namespace iomux {
       };
 
       Status state_of(Id);
+      bool get(Id);
       void turn_on(Id);
       void turn_off(Id);
       void blink(Id);
       void set(Id, Status);
+      void set(Id id, bool onoff);
    };
   
    /// @brief CNC Center outputs to Masso inputs
@@ -110,6 +114,6 @@ namespace iomux {
    inline auto outputs = Outputs{0};
 
    // Unique function to init the iomux and take case of the i2c
-   void init(reactor::Handle);
+   void init(asx::reactor::Handle);
 
 } // End of mux namespace
