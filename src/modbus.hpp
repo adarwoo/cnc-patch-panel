@@ -65,6 +65,9 @@ namespace modbus {
       };
    };
 
+   // Mask for the push buttons LEDs
+   static constexpr auto MASK_OF_PUSH_BUTTONS_LEDS = 0b111111;
+
    enum class Key : uint8_t {
       None   = 0,  
       Start  = 1,  

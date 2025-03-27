@@ -50,8 +50,12 @@ namespace iomux
    auto prev_inputs = Inputs{0};
 
    // Manage blinking for all LEDs
-   auto led_blink_next_change = std::array<timer::steady_clock::time_point, led::COUNT>{};
-   
+   auto led_blink_next_change = 
+      std::array<timer::steady_clock::time_point, led::COUNT>{};
+
+   auto virtual_blink_next_change = 
+      std::array<timer::steady_clock::time_point, led::COUNT_VIRTUAL>{};
+
    // Value of the LED output
    auto leds_fb = uint16_t{0};
 
@@ -59,11 +63,11 @@ namespace iomux
       alert_and_stop_if(code != i2c::status_code_t::STATUS_OK);
 
       switch (stage) {
-         case InitStage::init_led_val: iomux_led.set_value(0xAAAA, on_i2c_operation); break;
-         case InitStage::init_led_dir: iomux_led.set_dir(0, on_i2c_operation); break;
-         case InitStage::init_out_val: iomux_out.set_value(0, on_i2c_operation); break;
-         case InitStage::init_out_dir: iomux_out.set_value(0, on_i2c_operation); break;
-         case InitStage::init_in_dir:  iomux_in.set_dir(0xffff, on_i2c_operation); break;
+         case InitStage::init_led_val: iomux_led.set_value(0xffff, on_i2c_operation); break;
+         case InitStage::init_led_dir: iomux_led.set_dir  (0,      on_i2c_operation); break;
+         case InitStage::init_out_val: iomux_out.set_value(0,      on_i2c_operation); break;
+         case InitStage::init_out_dir: iomux_out.set_value(0,      on_i2c_operation); break;
+         case InitStage::init_in_dir:  iomux_in. set_dir  (0xffff, on_i2c_operation); break;
          case InitStage::init_poll:
             using namespace std::chrono;
             react_on_refresh.repeat(1000ms);
@@ -116,6 +120,11 @@ namespace iomux
          return Status::off;
       }
 
+      // Return the status of the LED (on or off) at the time of calling
+      bool get(Id id) {
+         return leds_fb & mask_of(id);
+      }
+
       void set(Id id, bool onoff) {
          auto _id = static_cast<uint8_t>(id);
 
@@ -140,7 +149,7 @@ namespace iomux
 
       void set(Id id, Status status) {
          switch (status) {
-         case Status::on:     leds_fb |= id; break; //set(id, true); break;
+         case Status::on:     set(id, true); break;
          case Status::off:    set(id, false); break;
          case Status::blinks: blink(id); break;
          default:
@@ -149,6 +158,9 @@ namespace iomux
       }
    }
 
+   /**
+    * Entry point for the periodic refresh of the i2c ops
+    */
    void on_refresh() {
       auto status = i2c::Master::get_status();
 
@@ -158,12 +170,23 @@ namespace iomux
          // Update blinking
          auto now = timer::steady_clock::now();
 
-         for ( uint8_t id=0; id < led::COUNT; ++id) {
+         // Go through all the regular LEDs to handle blinking
+         for ( uint8_t id=0; id < led_blink_next_change.size(); ++id) {
             auto next_change = led_blink_next_change[id];
 
             if ( next_change >= now ) {
                leds_fb ^= led::masks[id];
                led_blink_next_change[id] = next_change + BLINK_PERIOD;
+            }
+         }
+
+         // This only computes the state of the virtual LED so it can be used to control the console LEDs
+         for ( uint8_t index=0; index < virtual_blink_next_change.size(); ++index) {
+            auto next_change = virtual_blink_next_change[index];
+
+            if ( next_change >= now ) {
+               virtual_blink_next_change[index] = next_change + BLINK_PERIOD;
+               virtual_leds.all ^= 1<<index;
             }
          }
 
@@ -183,6 +206,3 @@ namespace iomux
    }
 
 } // namespace mux
-
-
-
