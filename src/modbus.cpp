@@ -18,39 +18,46 @@ namespace modbus {
    using asx::modbus::command_t;
 
    // Reactor handles
+   reactor::Handle react_to_send_beep;
    reactor::Handle react_to_query_console;
    reactor::Handle react_to_query_pneumatic;
    reactor::Handle react_to_set_relay;
    reactor::Handle react_to_console; // External handle
 
-   /// @brief called every 25ms to sample the console and pneumatic (every 100ms)
+   /// @brief called every 20ms to sample the console and pneumatic (every 100ms)
    ///   this may be followed by calls to other modbus devices
+   /// Calls the console every cycle
+   /// 0 1  2  3 4 
+   /// C CR C CP C | C CR C CP C ... every 100ms
    void on_modbus_cycle() {
       static uint8_t prescaler = 0;
-      #if 0
       static auto current_relays_value = Relays{0};
-      #endif
 
-      // Request bus to transmit to the console
-      TRACE_INFO(PATCH, "Request to send %u", static_cast<uint8_t>(react_to_query_console));
+      modbus_master::request_to_send(react_to_query_console);
 
-      if ( ++prescaler == 4 )
-      {
-         modbus_master::request_to_send(react_to_query_console);
+      // Throttle the number of relay
+      if ( prescaler == 1 and current_relays_value.all != relays.all ) {
+         modbus_master::request_to_send(react_to_set_relay);
+         current_relays_value.all = relays.all;
+      }
+
+      // Throttle the number of pneumatic packets as this is not a priority
+      if ( prescaler == 3 ) {
+         modbus_master::request_to_send(react_to_query_pneumatic);
          prescaler = 0;
       }
 
-
-#if 0
-      if ( ++prescaler == 4 ) {
-         patch::modbus_master::request_to_send(react_to_query_pneumatic);
+      if ( ++prescaler == 5 ) {
+         prescaler = 0;
       }
+   }
 
-      if ( current_relays_value.all != relays.all ) {
-         patch::modbus_master::request_to_send(react_to_set_relay);
-         current_relays_value.all = relays.all;
-      }
-#endif
+   /// Beep
+   void beep_request() {
+      Datagram::pack(console_address);
+      Datagram::pack(command_t::write_single_register);
+      Datagram::pack<uint16_t>(10); // Beep register (holding)
+      Datagram::pack<uint16_t>(2);  // Tone 1, 2 or 3
    }
 
    /// Create a modbus master payload to query (read and write) the console
@@ -133,6 +140,12 @@ namespace modbus {
    void init( reactor::Handle update ) {
       using namespace std::chrono;
 
+      // Register the reactor 'request' handle. First rejected are invoked first
+
+      // Beeps should be top priority
+      react_to_send_beep            = reactor::bind(beep_request,         reactor::prio::high);
+
+      // Pneumatic requests are next
       react_to_query_pneumatic      = reactor::bind(query_pneumatic,      reactor::prio::high);
       react_to_query_console        = reactor::bind(query_console,        reactor::prio::high);
       react_to_set_relay            = reactor::bind(set_relay,            reactor::prio::high);
@@ -142,6 +155,11 @@ namespace modbus {
       modbus_master::init(reactor::bind(on_comm_error));
 
       // Start the modbus queries after 2s
-      reactor::bind(on_modbus_cycle).repeat(2s, 100ms);
+      reactor::bind(on_modbus_cycle).repeat(2s, 20ms);
+   }
+
+   void beep() {
+      // Request to transmit a beep request
+      modbus_master::request_to_send(react_to_send_beep);
    }
 }  // namespace modbus

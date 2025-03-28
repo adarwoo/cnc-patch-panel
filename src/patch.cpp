@@ -97,6 +97,26 @@ namespace patch {
       modbus::console_leds.cool    = iomux::virtual_leds.cool;
       modbus::console_leds.dust    = iomux::virtual_leds.dust;
       modbus::console_leds.release = iomux::virtual_leds.release;
+
+      //
+      // Sounder (for door alarm)
+      //
+      modbus::console_leds.sounder = iomux::inputs.sounder;
+
+      //
+      // Process the keypad 'beep'
+      //
+      static bool beep = false;
+
+      // Detect a change
+      if ( beep != iomux::inputs.touch_screen_beep ) {
+         beep = iomux::inputs.touch_screen_beep;
+
+         // Request modbus beep in rising edge only
+         if ( beep ) {
+            modbus::beep();
+         }
+      }
    }
 
    /**

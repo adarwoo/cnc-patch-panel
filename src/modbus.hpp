@@ -62,6 +62,10 @@ namespace modbus {
          uint16_t dust : 1;
          uint16_t release : 1;
          uint16_t door : 1;
+         uint16_t reserved0 : 1;
+         uint16_t reserved1 : 1;
+         uint16_t reserved2 : 1;
+         uint16_t sounder : 1; // Not an LED! The sounder is mapped as an LED for efficient operation
       };
    };
 
@@ -96,5 +100,9 @@ namespace modbus {
    static inline auto console_comms_status   = CommStatus{};
    static inline auto pressure_in            = bool{false};
 
+   // Initialise passing a handler following a sucessfull reply
    void init(asx::reactor::Handle);
+
+   // Send a 'beep' request
+   void beep();
 }  // namespace modbus
