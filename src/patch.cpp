@@ -3,7 +3,6 @@
 
 #include <asx/ioport.hpp>
 #include <asx/reactor.hpp>
-
 #include <trace.h>
 
 #include "conf_board.h"
@@ -53,23 +52,25 @@ namespace patch {
       // LEDS
       //
 
-      // Air LEDs
-      iomux::led::set(iomux::led::Id::clean,         get_clean_led_status());
-      iomux::led::set(iomux::led::Id::low_pressure,  modbus::pressure_in);
-      iomux::led::set(iomux::led::Id::chuck,         iomux::inputs.chuck_pressure);
-
-      // Modbus comms LEDs
-      iomux::led::set(iomux::led::Id::console,       to_led_status(modbus::console_comms_status));
-      iomux::led::set(iomux::led::Id::pneumatic_hub, to_led_status(modbus::pneu_comms_status));
-      iomux::led::set(iomux::led::Id::relay,         to_led_status(modbus::relay_comms_status));
-
       // OC Outputs
-      iomux::led::set(iomux::led::Id::cam_light,     iomux::inputs.camera_light);
-      iomux::led::set(iomux::led::Id::laser_cross,   iomux::inputs.laser_crossair);
-      iomux::led::set(iomux::led::Id::cam_light,     iomux::inputs.camera_light);
-      iomux::led::set(iomux::led::Id::tower_green,   iomux::inputs.tower_green);
       iomux::led::set(iomux::led::Id::tower_red,     iomux::inputs.tower_red);
       iomux::led::set(iomux::led::Id::tower_yellow,  iomux::inputs.tower_yellow);
+      iomux::led::set(iomux::led::Id::tower_green,   iomux::inputs.tower_green);
+      iomux::led::set(iomux::led::Id::laser_cross,   iomux::inputs.laser_crossair);
+      iomux::led::set(iomux::led::Id::cam_light,     iomux::inputs.camera_light);
+      iomux::led::set(
+         iomux::led::Id::release_steppers,           *Pin(ISO_OUT_RELEASE_STEPPER)
+      );
+
+      // Air LEDs
+      iomux::led::set(iomux::led::Id::clean,         false); //get_clean_led_status());
+      iomux::led::set(iomux::led::Id::low_pressure,  false); //modbus::pressure_in);
+      iomux::led::set(iomux::led::Id::chuck,         false); //iomux::inputs.chuck_pressure);
+
+      // Modbus comms LEDs
+      iomux::led::set(iomux::led::Id::console,       false); //to_led_status(modbus::console_comms_status));
+      iomux::led::set(iomux::led::Id::pneumatic_hub, false); //to_led_status(modbus::pneu_comms_status));
+      iomux::led::set(iomux::led::Id::relay,         false); //to_led_status(modbus::relay_comms_status));
 
       // Door
       iomux::led::set(iomux::led::Id::door_closing,  false); // TODO
@@ -247,12 +248,13 @@ namespace patch {
       Pin(ISO_OUT_TOWER_LIGHT_GREEN ).init(dir_t::out);
       Pin(ISO_OUT_RELEASE_STEPPER   ).init(dir_t::out);
       Pin(ISO_OUT_LASER_CROSS       ).init(dir_t::out);
-      Pin(ISO_OUT_CAMERA_LIGHT).init(dir_t::out);
+      Pin(ISO_OUT_CAMERA_LIGHT      ).init(dir_t::out);
 
       // Start the i2c mux
-      iomux::init( reactor::bind(on_refresh) );
+      //iomux::init( reactor::bind(on_refresh) );
 
       // Start the modbus
+      TRACE_MILE(PATCH, "Starting modbus");
       modbus::init( reactor::bind(on_modbus_console_reply) );
    }
 }  // namespace patch

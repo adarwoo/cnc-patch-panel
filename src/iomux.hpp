@@ -7,7 +7,7 @@
 namespace iomux {
    /// @brief Callback for processing the update inputs and outputs
    using ProcessInputCb = void(*)();
-    
+
    namespace led {
       enum class Id : uint8_t {
          tower_red = 0,
@@ -35,24 +35,35 @@ namespace iomux {
 
       constexpr auto COUNT = static_cast<uint8_t>(Id::END_OF_LEDS);
       constexpr auto VIRTUAL_FIRST_INDEX = COUNT + 1;
-      constexpr auto COUNT_VIRTUAL = 
+      constexpr auto COUNT_VIRTUAL =
          static_cast<uint8_t>(Id::END_OF_VIRTUAL) - VIRTUAL_FIRST_INDEX;
-   
+
+      constexpr uint16_t BM(auto port, auto bit_pos) {
+         uint8_t shift_by = bit_pos;
+
+         // The port 0 is sent first (as per the datasheet) so Port0 is the MSB
+         if ( port == 1 ) {
+            shift_by += 8;
+         }
+
+         return 1 << shift_by;
+      }
+
       static constexpr uint16_t masks[COUNT] = {
-         1<<0,  // tower_red
-         1<<1,  // tower_yellow
-         1<<2,  // tower_green
-         1<<3,  // laser_cross
-         1<<4,  // cam_light
-         1<<5,  // release_steppers
-         1<<6,  // console
-         1<<7,  // reslay
-         1<<8,  // pneumatic_hub
-         1<<9,  // low_pressure
-         1<<10, // chuck
-         1<<11, // clean
-         1<<12, // door_opening
-         1<<13  // door_closing
+         BM(0,0),  // tower_red
+         BM(0,1),  // tower_yellow
+         BM(0,2),  // tower_green
+         BM(0,3),  // laser_cross
+         BM(0,4),  // cam_light
+         BM(0,5),  // release_steppers
+         BM(0,6),  // console comm status
+         BM(1,0),  // relay comm status
+         BM(1,1),  // pneumatic_hub comm status
+         BM(1,2),  // low_pressure
+         BM(1,3),  // chuck
+         BM(1,4),  // clean
+         BM(1,5),  // door_opening
+         BM(1,6)   // door_closing
       };
 
       union Virtual {
@@ -77,7 +88,7 @@ namespace iomux {
       void set(Id, Status);
       void set(Id id, bool onoff);
    };
-  
+
    /// @brief CNC Center outputs to Masso inputs
    union Outputs {
       uint16_t all;
@@ -104,19 +115,22 @@ namespace iomux {
       uint16_t all;
 
       struct {
-         uint16_t tower_red         : 1;
-         uint16_t tower_yellow      : 1;
-         uint16_t tower_green       : 1;
-         uint16_t door_open_close   : 1;
-         uint16_t toolset_clean     : 1;
+         // IO 0 0->7
          uint16_t chuck_pressure    : 1;
+         uint16_t toolset_clean     : 1;
+         uint16_t door_open_close   : 1;
+         uint16_t tower_green       : 1;
+         uint16_t tower_yellow      : 1;
+         uint16_t tower_red         : 1;
+         uint16_t es                : 1;
+         uint16_t spare_input_2     : 1;
+
+         // IO 1 0->7
+         uint16_t spare_input_1     : 1;
+         uint16_t camera_light      : 1;
+         uint16_t laser_crossair    : 1;
          uint16_t touch_screen_beep : 1;
          uint16_t sounder           : 1;
-         uint16_t laser_crossair    : 1;
-         uint16_t camera_light      : 1;
-         uint16_t spare_input_1     : 1;
-         uint16_t spare_input_2     : 1;
-         uint16_t es                : 1;
          uint16_t spindle_is_on     : 1;
          uint16_t door_is_down      : 1;
          uint16_t door_is_up        : 1;
@@ -126,8 +140,8 @@ namespace iomux {
    //
    // Inline instances for direct access
    //
-   inline auto inputs = Inputs{0};
-   inline auto outputs = Outputs{0};
+   inline auto inputs       = Inputs{0};
+   inline auto outputs      = Outputs{0};
    inline auto virtual_leds = led::Virtual{0};
 
    // Unique function to init the iomux and take case of the i2c

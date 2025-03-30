@@ -37,14 +37,13 @@ namespace modbus {
 
       // Throttle the number of relay
       if ( prescaler == 1 and current_relays_value.all != relays.all ) {
-         modbus_master::request_to_send(react_to_set_relay);
+         //modbus_master::request_to_send(react_to_set_relay);
          current_relays_value.all = relays.all;
       }
 
       // Throttle the number of pneumatic packets as this is not a priority
       if ( prescaler == 3 ) {
-         modbus_master::request_to_send(react_to_query_pneumatic);
-         prescaler = 0;
+         // modbus_master::request_to_send(react_to_query_pneumatic);
       }
 
       if ( ++prescaler == 5 ) {
@@ -66,6 +65,15 @@ namespace modbus {
       Datagram::pack(console_address);
       Datagram::pack(command_t::custom);
       Datagram::pack(console_leds.all);
+      
+      if ( console_leds.all == 0 ) {
+         console_leds.all = 1;
+      } else if ( console_leds.all == 0b100000000000) {
+         console_leds.all = 0;
+      } else {
+         console_leds.all <<=1 ;
+      }
+
    }
 
    void query_pneumatic() {
@@ -155,7 +163,7 @@ namespace modbus {
       modbus_master::init(reactor::bind(on_comm_error));
 
       // Start the modbus queries after 2s
-      reactor::bind(on_modbus_cycle).repeat(2s, 20ms);
+      reactor::bind(on_modbus_cycle).repeat(2s, 100ms);
    }
 
    void beep() {

@@ -34,21 +34,21 @@ This is the list of connectors, functions and connections.
 
 ### List of Masso outputs of interrest
 
-   | MASSO Out# | Function type            | Type         | To#  | OC#  |
-   |------------|--------------------------|--------------|------|------|
-   | (1-1/6)  1 | Tower Light Red          | Indicator    | J3-1 | J5-1 |
-   | (1-2/6)  2 | Tower Light Yellow       | Indicator    | J3-2 | J5-2 |
-   | (1-3/6)  3 | Tower Light Green        | Indicator    | J3-3 | J5-3 |
-   | (1-4/6)  4 | Door Open/Close          | Command      | J3-4 | -    |
-   | (1-5/6)  5 | Tool Air Blast Cleaning  | Pneumatic    | J3-5 | -    |
-   | (1-6/6)  6 | Chuck Clamp              | Pneumatic    | J3-6 | -    |
-   | (2-1/7)  7 | --                       | --           | J4-1 | -    |
-   | (2-2/7)  8 | Touch Screen Beep Output | Sound        | J4-2 | -    |
-   | (2-3/7)  9 | Sounder                  | Sound        | J4-3 | -    |
-   | (2-4/7) 10 | [Light On / Off]         | Spare1       | J4-4 | J5-4 |
-   | (2-5/7) 11 | [Laser Crosshair +]      | Spare2       | J4-5 | J5-5 |
-   | (2-6/7) 12 | [Camera-Light On/Off]    | Spare3       | J4-6 | J5-6 |
-   | (2-7/7) ES | Emergency Stop           | ES           | J4-7 | J5-7 |
+   | MASSO Out# | Function type            | Type         | To#  | OC#  | TTL Input |
+   |------------|--------------------------|--------------|------|------|----|
+   | (1-1/6)  1 | Tower Light Red          | Indicator    | J3-1 | J5-1 | 1  |
+   | (1-2/6)  2 | Tower Light Yellow       | Indicator    | J3-2 | J5-2 | 2  |
+   | (1-3/6)  3 | Tower Light Green        | Indicator    | J3-3 | J5-3 | 3  |
+   | (1-4/6)  4 | Door Open/Close          | Command      | J3-4 | -    | 4  |
+   | (1-5/6)  5 | Tool Air Blast Cleaning  | Pneumatic    | J3-5 | -    | 5  |
+   | (1-6/6)  6 | Chuck Clamp              | Pneumatic    | J3-6 | -    | 6  |
+   | (2-1/7)  7 | Touch Screen Beep Output | Sound        | J4-7 | -    | 7  |
+   | (2-2/7)  8 | Sounder                  | Sound        | J4-6 | -    | 8  |
+   | (2-3/7)  9 | [Laser Crosshair +]      | Command      | J4-5 | -    | 9  |
+   | (2-4/7) 10 | [Camera-Light On/Off]    | Command      | J4-4 | J5-4 | 10 |
+   | (2-5/7) 11 | Spare Input 1            | Spare        | J4-3 | J5-5 | 11 |
+   | (2-6/7) 12 | Spare Input 2            | Spare        | J4-2 | J5-6 | 12 |
+   | (2-7/7) ES | Emergency Stop           | ES           | J4-1 | J5-7 | 13 |
 
 
 ### List of CNC Center OC outputs
@@ -88,24 +88,23 @@ This is the list of connectors, functions and connections.
    | J8-1 | NPN Collector in         |
    | J8-2 | GND                      |
 
-
 ### List of CNC Center TTL inputs
 
-   | Function Type            | J#-# | PCA# |
-   |--------------------------|------|------|
-   | Tower Light Red          | J3-1 | 0    |
-   | Tower Light Yellow       | J3-2 | 1    |
-   | Tower Light Green        | J3-3 | 2    |
-   | Door Open/Close          | J3-4 | 3    |
-   | Tool Air Blast Cleaning  | J3-5 | 4    |
-   | Chuck Clamp              | J3-6 | 5    |
-   | --                       | J4-1 | 8    |
-   | Touch Screen Beep Output | J4-2 | 9    |
-   | Sounder                  | J4-3 | 10   |
-   | [Light On / Off]         | J4-4 | 11   |
-   | [Laser Crosshair +]      | J4-5 | 12   |
-   | [Camera-Light On/Off]    | J4-6 | 13   |
-   | Emergency Stop           | J4-7 | 14   |
+   | Function Type            | J#-# |PCA# |TTL# |
+   |--------------------------|------|-----|-----|
+   | Tower Light Red          | J3-6 | 0-5 |  1  |
+   | Tower Light Yellow       | J3-5 | 0-4 |  2  |
+   | Tower Light Green        | J3-4 | 0-3 |  3  |
+   | Door Open/Close          | J3-3 | 0-2 |  4  |
+   | Tool Air Blast Cleaning  | J3-2 | 0-1 |  5  |
+   | Chuck Clamp              | J3-1 | 0-0 |  6  |
+   | Sounder                  | J4-7 | 1-4 |  7  |
+   | Touch Screen Beep Output | J4-6 | 1-3 |  8  |
+   | [Laser Crosshair +]      | J4-5 | 1-2 |  9  |
+   | [Camera-Light On/Off]    | J4-4 | 1-1 | 10  |
+   | [Spare Input 1]          | J4-3 | 1-0 | 11  |
+   | [Spare Input 2]          | J4-2 | 0-7 | 12  |
+   | Emergency Stop           | J4-1 | 0-6 | 13  |
 
 ### List of CNC Center TTL outputs
 

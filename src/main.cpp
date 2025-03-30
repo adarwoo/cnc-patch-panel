@@ -7,7 +7,7 @@
 
 int main()
 {
-   TRACE_MILE(PATCH, "CNC Patch starting");
+   TRACE_MILE(APP, "CNC Patch starting");
 
    // Initialse the patch management (i2c, gpio and modbus sequencer)
    patch::init();

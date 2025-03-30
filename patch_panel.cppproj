@@ -175,7 +175,7 @@
     <UsesExternalMakeFile>True</UsesExternalMakeFile>
     <OutputDirectory>
     </OutputDirectory>
-    <BuildTarget>all</BuildTarget>
+    <BuildTarget>all VERBOSE=1</BuildTarget>
     <CleanTarget>clean</CleanTarget>
     <ExternalMakeFilePath>Makefile</ExternalMakeFilePath>
   </PropertyGroup>
@@ -318,6 +318,12 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\main.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\modbus.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="src\modbus.hpp">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="src\patch.cpp">

@@ -12,6 +12,8 @@ using namespace std::chrono;
 
 constexpr auto BLINK_PERIOD = 500ms;
 
+
+
 namespace iomux
 {
    static enum class InitStage : uint8_t {
@@ -70,7 +72,7 @@ namespace iomux
          case InitStage::init_in_dir:  iomux_in. set_dir  (0xffff, on_i2c_operation); break;
          case InitStage::init_poll:
             using namespace std::chrono;
-            react_on_refresh.repeat(1000ms);
+            react_on_refresh.repeat(10ms);
             break;
          case InitStage::read_input:
             iomux_in.read(on_i2c_operation);
