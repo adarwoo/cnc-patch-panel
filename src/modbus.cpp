@@ -9,7 +9,6 @@
 #include "conf_board.h"
 #include "conf_modbus.hpp"
 #include "datagram.hpp"
-
 #include "modbus.hpp"
 
 
@@ -62,7 +61,13 @@ namespace modbus {
       }
    }
 
-   /// Beep
+   // -------------------------------------------------------------------------
+   // Modbus packets
+   // -------------------------------------------------------------------------
+
+   /**
+    * Create the modbus beep request packet
+    */
    void beep_request() {
       Datagram::pack(console_address);
       Datagram::pack(command_t::write_single_register);
@@ -70,7 +75,9 @@ namespace modbus {
       Datagram::pack<uint16_t>(2);  // Tone 1, 2 or 3
    }
 
-   /// Create a modbus master payload to query (read and write) the console
+   /**
+    * Create a modbus master payload to query (read and write) the console
+    */
    void query_console() {
       // Update the Leds. The reply contains the switches and push button state
       Datagram::pack(console_address);
@@ -84,18 +91,22 @@ namespace modbus {
       } else {
          console_leds.all <<=1 ;
       }
-
+      #endif
    }
 
+   /**
+    * Update the pneumatic coils and request the pressures readout
+    */
    void query_pneumatic() {
-      // Update the pneumatic coils and get the pressure readout
       Datagram::pack(pneumatic_relay_address);
       Datagram::pack(command_t::custom);
       Datagram::pack(coils.all);
    }
 
+   /**
+    * Set the relays positions
+    */
    void set_relay() {
-      // Update the relay
       Datagram::pack(relay_address);
       Datagram::pack(command_t::write_multiple_coils);
       Datagram::pack(0);           // Start address
@@ -104,20 +115,30 @@ namespace modbus {
       Datagram::pack(relays.all);
    }
 
+   // -------------------------------------------------------------------------
+   // Modbus replies
+   // -------------------------------------------------------------------------
+
+   /**
+    * Process the reply to the custom modbus request
+    * Store the selected push button and the switch value and
+    *  further delegate the processing to the patch
+    */
    void on_console_reply(uint8_t _switches, uint8_t _key) {
       // Store for the handler to process
       switches = static_cast<Switches>(_switches);
       key = static_cast<Key>(_key);
 
-      // Notfiy the external reactor
-      react_to_console.notify();
+      // Notfiy the external reactor (Stage is 0)
+      react_to_console(0);
 
       // Set the status to OK
       console_comms_status = CommStatus::ok;
    }
 
    /**
-    * Called when the modbus
+    * Process the pneumatic custom modbus message reply.
+    * Store the pressure switch state
     */
    void on_pneumatic_reply(uint8_t switch_state) {
       pressure_in = switch_state;
@@ -156,19 +177,25 @@ namespace modbus {
       }
    }
 
-   void init( reactor::Handle update ) {
+   /**
+    * Ready the modbus master and the query cycle
+    * @param react_on_console_reply
+    *        Reactor handle to call once a reply from the console has been
+    *        received and the internal caches data are updated
+    */
+   void init( reactor::Handle react_on_console_reply ) {
       using namespace std::chrono;
 
       // Register the reactor 'request' handle. First rejected are invoked first
 
-      // Beeps should be top priority
-      react_to_send_beep            = reactor::bind(beep_request,         reactor::prio::high);
+      // Beeps should be first to be handled
+      react_to_send_beep            = reactor::bind(beep_request);
 
       // Pneumatic requests are next
-      react_to_query_pneumatic      = reactor::bind(query_pneumatic,      reactor::prio::high);
-      react_to_query_console        = reactor::bind(query_console,        reactor::prio::high);
-      react_to_set_relay            = reactor::bind(set_relay,            reactor::prio::high);
-      react_to_console              = update;
+      react_to_query_pneumatic      = reactor::bind(query_pneumatic);
+      react_to_query_console        = reactor::bind(query_console);
+      react_to_set_relay            = reactor::bind(set_relay);
+      react_to_console              = react_on_console_reply;
 
       // Start the modbus cycle in 2 seconds (to match with when the LEDs turn off)
       modbus_master::init(reactor::bind(on_comm_error));
@@ -177,6 +204,9 @@ namespace modbus {
       reactor::bind(on_modbus_cycle).repeat(2s, 20ms);
    }
 
+   /**
+    * Request a 'beep' from the console
+    */
    void beep() {
       // Request to transmit a beep request
       modbus_master::request_to_send(react_to_send_beep);
