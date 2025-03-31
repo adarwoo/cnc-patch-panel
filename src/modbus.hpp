@@ -73,32 +73,32 @@ namespace modbus {
    static constexpr auto MASK_OF_PUSH_BUTTONS_LEDS = 0b111111;
 
    enum class Key : uint8_t {
-      None   = 0,  
-      Start  = 1,  
-      Stop   = 2,  
+      None   = 0,
+      Start  = 1,
+      Stop   = 2,
       Homing = 3,
-      Goto0  = 4,  
-      Park   = 5,  
-      Chuck  = 6,  
-      Door   = 7,  
-      P1     = 8, 
-      P2     = 9, 
-      P3     =10, 
-      P4     =11, 
-      P5     =12, 
-      P6     =13, 
+      Goto0  = 4,
+      Park   = 5,
+      Chuck  = 6,
+      Door   = 7,
+      P1     = 8,
+      P2     = 9,
+      P3     =10,
+      P4     =11,
+      P5     =12,
+      P6     =13,
       P7     =14
    };
 
-   static inline auto relays                 = Relays{0};
-   static inline auto switches               = Switches{0};
-   static inline auto key                    = Key{Key::None};
-   static inline auto coils                  = PneumaticCoils{0};
-   static inline auto console_leds           = ConsoleLeds{0};
-   static inline auto relay_comms_status     = CommStatus{};
-   static inline auto pneu_comms_status      = CommStatus{};
-   static inline auto console_comms_status   = CommStatus{};
-   static inline auto pressure_in            = bool{false};
+   //
+   // To be used at will. These are
+   //
+   extern Relays         relays;
+   extern Switches       switches;
+   extern Key            key;
+   extern PneumaticCoils coils;
+   extern ConsoleLeds    console_leds;
+   extern bool           pressure_in;
 
    // Initialise passing a handler following a sucessfull reply
    void init(asx::reactor::Handle);

@@ -24,10 +24,21 @@ namespace modbus {
    reactor::Handle react_to_set_relay;
    reactor::Handle react_to_console; // External handle
 
+   Relays         relays                 = Relays{0};
+   Switches       switches               = Switches{0};
+   Key            key                    = Key{Key::None};
+   PneumaticCoils coils                  = PneumaticCoils{0};
+   ConsoleLeds    console_leds           = ConsoleLeds{0};
+   bool           pressure_in            = bool{false};
+
+   auto relay_comms_status     = CommStatus{};
+   auto pneu_comms_status      = CommStatus{};
+   auto console_comms_status   = CommStatus{};
+
    /// @brief called every 20ms to sample the console and pneumatic (every 100ms)
    ///   this may be followed by calls to other modbus devices
    /// Calls the console every cycle
-   /// 0 1  2  3 4 
+   /// 0 1  2  3 4
    /// C CR C CP C | C CR C CP C ... every 100ms
    void on_modbus_cycle() {
       static uint8_t prescaler = 0;
@@ -65,7 +76,7 @@ namespace modbus {
       Datagram::pack(console_address);
       Datagram::pack(command_t::custom);
       Datagram::pack(console_leds.all);
-      
+
       if ( console_leds.all == 0 ) {
          console_leds.all = 1;
       } else if ( console_leds.all == 0b100000000000) {
@@ -139,7 +150,7 @@ namespace modbus {
       case relay_address:
          relay_comms_status = new_status;
          break;
-      
+
       default:
          break;
       }
@@ -162,8 +173,8 @@ namespace modbus {
       // Start the modbus cycle in 2 seconds (to match with when the LEDs turn off)
       modbus_master::init(reactor::bind(on_comm_error));
 
-      // Start the modbus queries after 2s
-      reactor::bind(on_modbus_cycle).repeat(2s, 100ms);
+      // Start the modbus queries after 2s (relay will take 5)
+      reactor::bind(on_modbus_cycle).repeat(2s, 20ms);
    }
 
    void beep() {
