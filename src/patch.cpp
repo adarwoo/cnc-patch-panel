@@ -114,6 +114,7 @@ namespace patch {
          break;
 
       case 3:
+      default:
          // Door
          iomux::led::set(iomux::led::Id::door_closing,  false); // TODO
          iomux::led::set(iomux::led::Id::door_opening,  false); // TODO
@@ -131,12 +132,6 @@ namespace patch {
          modbus::console_leds.dust    = iomux::virtual_leds.dust;
          modbus::console_leds.release = iomux::virtual_leds.release;
 
-         // Ask to plan the next step
-         react_on_patch(4);
-         break;
-
-      case 4:
-      default:
          //
          // Sounder (for door alarm)
          //
