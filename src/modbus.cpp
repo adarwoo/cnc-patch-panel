@@ -23,6 +23,17 @@ namespace modbus {
    reactor::Handle react_to_set_relay;
    reactor::Handle react_to_console; // External handle
 
+   // All managed assets
+   Relays         relays{0};
+   Switches       switches{0};
+   Key            key{Key::None};
+   PneumaticCoils coils{0};
+   ConsoleLeds    console_leds{0};
+   CommStatus     relay_comms_status{};
+   CommStatus     pneu_comms_status{};
+   CommStatus     console_comms_status{};
+   bool           pressure_in{false};   
+
    /// @brief called every 20ms to sample the console and pneumatic (every 100ms)
    ///   this may be followed by calls to other modbus devices
    /// Calls the console every cycle

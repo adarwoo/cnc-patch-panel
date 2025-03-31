@@ -90,15 +90,15 @@ namespace modbus {
       P7     =14
    };
 
-   static inline auto relays                 = Relays{0};
-   static inline auto switches               = Switches{0};
-   static inline auto key                    = Key{Key::None};
-   static inline auto coils                  = PneumaticCoils{0};
-   static inline auto console_leds           = ConsoleLeds{0};
-   static inline auto relay_comms_status     = CommStatus{};
-   static inline auto pneu_comms_status      = CommStatus{};
-   static inline auto console_comms_status   = CommStatus{};
-   static inline auto pressure_in            = bool{false};
+   extern Relays relays;
+   extern Switches switches;
+   extern Key key;
+   extern PneumaticCoils coils;
+   extern ConsoleLeds console_leds;
+   extern CommStatus relay_comms_status;
+   extern CommStatus pneu_comms_status;
+   extern CommStatus console_comms_status;
+   extern bool pressure_in;
 
    // Initialise passing a handler following a sucessfull reply
    void init(asx::reactor::Handle);

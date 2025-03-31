@@ -13,6 +13,9 @@ using namespace std::chrono;
 /// @brief Period between blinking LED state change
 constexpr auto BLINK_PERIOD = 250ms;
 
+// Split the LED refresh into iterations
+constexpr auto MAX_LEDS_TO_PROCESS_PER_ITERATIONS = 4;
+
 namespace iomux
 {
    static enum class InitStage : uint8_t {
@@ -38,7 +41,7 @@ namespace iomux
    static auto react_on_input_change  = reactor::Handle{};
 
    // Forward declaration
-   static void on_refresh();
+   static void on_refresh(uint8_t yield_to);
 
    // Reactor to call periodically
    auto react_on_refresh = reactor::bind(on_refresh);
@@ -71,7 +74,7 @@ namespace iomux
          case InitStage::init_in_dir:  iomux_in. set_dir  (0xffff, on_i2c_operation); break;
          case InitStage::init_poll:
             using namespace std::chrono;
-            react_on_refresh.repeat(10ms);
+            react_on_refresh.repeat<uint8_t>(1s, 10ms, 0);
             break;
          case InitStage::read_input:
             iomux_in.read(on_i2c_operation);
@@ -157,37 +160,67 @@ namespace iomux
    /**
     * Entry point for the periodic refresh of the i2c ops
     */
-   void on_refresh() {
+   void on_refresh(uint8_t yield_to) {
       auto status = i2c::Master::get_status();
+      static auto now = timer::steady_clock::now();
 
       if ( status == i2c::status_code_t::STATUS_OK ) {
-         stage = InitStage::read_input;
+         switch (yield_to) {
+         case 0:
+         {
+            // Force the state machine to go back to read
+            stage = InitStage::read_input;
 
-         // Update blinking
-         auto now = timer::steady_clock::now();
+            // Update blinking
+            auto now = timer::steady_clock::now();
 
-         // Go through all the regular LEDs to handle blinking
-         for ( uint8_t id=0; id < led_blink_next_change.size(); ++id) {
-            auto next_change = led_blink_next_change[id];
+            // This only computes the state of the virtual LED so it can be used to control the console LEDs
+            for ( uint8_t index=0; index < virtual_blink_next_change.size(); ++index) {
+               auto next_change = virtual_blink_next_change[index];
 
-            if ( next_change >= now ) {
-               leds_fb ^= led::masks[id];
-               led_blink_next_change[id] = next_change + BLINK_PERIOD;
+               if ( next_change >= now ) {
+                  virtual_blink_next_change[index] = next_change + BLINK_PERIOD;
+                  virtual_leds.all ^= 1<<index;
+               }
             }
+
+            // Yield till next time
+            reactor::yield(1);
+            
+            break;
          }
+         default:
+         {
+            // Go through all the regular LEDs to handle blinking
+            uint8_t id = (yield_to - 1) * MAX_LEDS_TO_PROCESS_PER_ITERATIONS;
+            uint8_t id_to = id + MAX_LEDS_TO_PROCESS_PER_ITERATIONS;
+            bool last = (id_to >= led_blink_next_change.size());
 
-         // This only computes the state of the virtual LED so it can be used to control the console LEDs
-         for ( uint8_t index=0; index < virtual_blink_next_change.size(); ++index) {
-            auto next_change = virtual_blink_next_change[index];
-
-            if ( next_change >= now ) {
-               virtual_blink_next_change[index] = next_change + BLINK_PERIOD;
-               virtual_leds.all ^= 1<<index;
+            if ( last ) {
+               id_to = led_blink_next_change.size();
             }
-         }
 
-         // Update
-         on_i2c_operation(status);
+            while (id < id_to) {
+               auto next_change = led_blink_next_change[id];
+
+               if ( next_change >= now ) {
+                  leds_fb ^= led::masks[id];
+                  led_blink_next_change[id] = next_change + BLINK_PERIOD;
+               }
+
+               ++id;
+            }
+
+            if ( last ) {
+               // Update
+               on_i2c_operation(status);
+            } else {
+               reactor::yield(yield_to + 1);
+            }
+
+            break;
+         }
+         }
       }
    }
 

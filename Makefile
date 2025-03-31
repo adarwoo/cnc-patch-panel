@@ -11,6 +11,7 @@ SRCS = \
    src/iomux.cpp \
    src/patch.cpp \
    src/modbus.cpp \
+   src/door.cpp \
 
 # Inlude the actual build rules
 include asx/make/rules.mak
