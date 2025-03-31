@@ -15,7 +15,20 @@ namespace patch {
    using namespace asx::ioport;
    using namespace asx;
 
-   // Map comm status to LED status
+   // Local functions
+   static void on_patch(uint8_t stage);
+   static void on_modbus_console_reply(uint8_t stage);
+
+   // Local reactors
+   static auto react_on_patch = reactor::bind(on_patch);
+   static auto react_on_modbus_console_reply = reactor::bind(on_modbus_console_reply);
+
+   /**
+    * Map comm status to LED status.
+    * No comm - LED is off
+    * Errors - LED blinks
+    * OK - LED is on
+    */
    iomux::led::Status to_led_status(modbus::CommStatus status) {
       auto retval = iomux::led::Status::off;
 
@@ -41,82 +54,105 @@ namespace patch {
       return retval;
    }
 
-   // Called once per i2c cycle
-   // This cycle is much faster that the modbus cycle, so it can be used to sync all
-   void on_refresh() {
-      // Sync pneumatics
-      iomux::outputs.air_pressure_low_alarm = modbus::pressure_in;
-      modbus::coils.chuck = iomux::inputs.chuck_pressure;
-
-      //
-      // LEDS
-      //
-
-      // OC Outputs
-      iomux::led::set(iomux::led::Id::tower_red,     iomux::inputs.tower_red);
-      iomux::led::set(iomux::led::Id::tower_yellow,  iomux::inputs.tower_yellow);
-      iomux::led::set(iomux::led::Id::tower_green,   iomux::inputs.tower_green);
-      iomux::led::set(iomux::led::Id::laser_cross,   iomux::inputs.laser_crossair);
-      iomux::led::set(iomux::led::Id::cam_light,     iomux::inputs.camera_light);
-      iomux::led::set(
-         iomux::led::Id::release_steppers,           *Pin(ISO_OUT_RELEASE_STEPPER)
-      );
-
-      // Air LEDs
-      iomux::led::set(iomux::led::Id::clean,         false); //get_clean_led_status());
-      iomux::led::set(iomux::led::Id::low_pressure,  false); //modbus::pressure_in);
-      iomux::led::set(iomux::led::Id::chuck,         false); //iomux::inputs.chuck_pressure);
-
-      // Modbus comms LEDs
-      iomux::led::set(iomux::led::Id::console,       false); //to_led_status(modbus::console_comms_status));
-      iomux::led::set(iomux::led::Id::pneumatic_hub, false); //to_led_status(modbus::pneu_comms_status));
-      iomux::led::set(iomux::led::Id::relay,         false); //to_led_status(modbus::relay_comms_status));
-
-      // Door
-      iomux::led::set(iomux::led::Id::door_closing,  false); // TODO
-      iomux::led::set(iomux::led::Id::door_opening,  false); // TODO
-
-      //
-      // Drive MPU GPIOs
-      //
-      Pin(ISO_OUT_ES                ).set( iomux::inputs.es );
-      Pin(ISO_OUT_TOWER_LIGHT_RED   ).set( iomux::inputs.tower_red );
-      Pin(ISO_OUT_TOWER_LIGHT_YELLOW).set( iomux::inputs.tower_yellow );
-      Pin(ISO_OUT_TOWER_LIGHT_GREEN ).set( iomux::inputs.tower_green );
-      Pin(ISO_OUT_LASER_CROSS       ).set( iomux::inputs.laser_crossair );
-      Pin(ISO_OUT_CAMERA_LIGHT      ).set( iomux::inputs.camera_light );
-
-      //
-      // Drive Masso inputs (our outputs) which are not keys
-      //
-      iomux::outputs.door_sensor_input = modbus::switches.door || iomux::inputs.door_is_down;
-
-      //
-      // Process the switches' Leds
-      //
-      modbus::console_leds.door    = iomux::virtual_leds.door;
-      modbus::console_leds.cool    = iomux::virtual_leds.cool;
-      modbus::console_leds.dust    = iomux::virtual_leds.dust;
-      modbus::console_leds.release = iomux::virtual_leds.release;
-
-      //
-      // Sounder (for door alarm)
-      //
-      modbus::console_leds.sounder = iomux::inputs.sounder;
-
-      //
-      // Process the keypad 'beep'
-      //
+   /**
+    * Called by the i2c with the value 0 once all the i2c IO Mux are in
+    * The function splits the operation to allow the Modbus operation
+    * to take place in parallel limiting the jitter.
+    */
+   void on_patch(uint8_t stage) {
+      // Keep the state of the beep to detect the edge
       static bool beep = false;
 
-      // Detect a change
-      if ( beep != iomux::inputs.touch_screen_beep ) {
-         beep = iomux::inputs.touch_screen_beep;
+      switch ( stage++ ) {
+      case 0:
+         // Sync pneumatics
+         iomux::outputs.air_pressure_low_alarm = modbus::pressure_in;
+         modbus::coils.chuck = iomux::inputs.chuck_pressure;
 
-         // Request modbus beep in rising edge only
-         if ( beep ) {
-            modbus::beep();
+         //
+         // Drive MPU GPIOs
+         //
+         Pin(ISO_OUT_ES                ).set( iomux::inputs.es );
+         Pin(ISO_OUT_TOWER_LIGHT_RED   ).set( iomux::inputs.tower_red );
+         Pin(ISO_OUT_TOWER_LIGHT_YELLOW).set( iomux::inputs.tower_yellow );
+         Pin(ISO_OUT_TOWER_LIGHT_GREEN ).set( iomux::inputs.tower_green );
+         Pin(ISO_OUT_LASER_CROSS       ).set( iomux::inputs.laser_crossair );
+         Pin(ISO_OUT_CAMERA_LIGHT      ).set( iomux::inputs.camera_light );
+
+         // Ask to plan the next step
+         react_on_patch(1);
+         break;
+
+      case 1:
+         // OC Outputs
+         iomux::led::set(iomux::led::Id::tower_red,     iomux::inputs.tower_red);
+         iomux::led::set(iomux::led::Id::tower_yellow,  iomux::inputs.tower_yellow);
+         iomux::led::set(iomux::led::Id::tower_green,   iomux::inputs.tower_green);
+         iomux::led::set(iomux::led::Id::laser_cross,   iomux::inputs.laser_crossair);
+         iomux::led::set(iomux::led::Id::cam_light,     iomux::inputs.camera_light);
+         iomux::led::set(
+            iomux::led::Id::release_steppers,           *Pin(ISO_OUT_RELEASE_STEPPER)
+         );
+
+         // Ask to plan the next step
+         react_on_patch(2);
+         break;
+
+      case 2:
+         // Air LEDs
+         iomux::led::set(iomux::led::Id::clean,         get_clean_led_status());
+         iomux::led::set(iomux::led::Id::low_pressure,  modbus::pressure_in);
+         iomux::led::set(iomux::led::Id::chuck,         iomux::inputs.chuck_pressure);
+
+         // Modbus comms LEDs
+         iomux::led::set(iomux::led::Id::console,       to_led_status(modbus::console_comms_status));
+         iomux::led::set(iomux::led::Id::pneumatic_hub, to_led_status(modbus::pneu_comms_status));
+         iomux::led::set(iomux::led::Id::relay,         to_led_status(modbus::relay_comms_status));
+
+         // Ask to plan the next step
+         react_on_patch(3);
+         break;
+
+      case 3:
+         // Door
+         iomux::led::set(iomux::led::Id::door_closing,  false); // TODO
+         iomux::led::set(iomux::led::Id::door_opening,  false); // TODO
+
+         //
+         // Drive Masso inputs (our outputs) which are not keys
+         //
+         iomux::outputs.door_sensor_input = modbus::switches.door || iomux::inputs.door_is_down;
+
+         //
+         // Process the switches' Leds
+         //
+         modbus::console_leds.door    = iomux::virtual_leds.door;
+         modbus::console_leds.cool    = iomux::virtual_leds.cool;
+         modbus::console_leds.dust    = iomux::virtual_leds.dust;
+         modbus::console_leds.release = iomux::virtual_leds.release;
+
+         // Ask to plan the next step
+         react_on_patch(4);
+         break;
+
+      case 4:
+      default:
+         //
+         // Sounder (for door alarm)
+         //
+         modbus::console_leds.sounder = iomux::inputs.sounder;
+
+         // Detect a change in the beep
+         if ( beep != iomux::inputs.touch_screen_beep ) {
+            beep = iomux::inputs.touch_screen_beep;
+
+            // Request modbus beep in rising edge only
+            if ( beep ) {
+               modbus::beep();
+            }
          }
+
+         break;
       }
    }
 
@@ -134,108 +170,125 @@ namespace patch {
       }
    }
    
-   void on_modbus_console_reply() {
-      //
-      // Map the keys to the output
-      //
-      iomux::Outputs v{0};
+   void on_modbus_console_reply(uint8_t stage) {
+      switch (stage) {
+      case 0: {
+         //
+         // Map the keys to the output
+         //
+         iomux::Outputs v{0};
 
-      switch (modbus::key) {
-      case modbus::Key::Start:  v.button_start = 1;         break;
-      case modbus::Key::Stop:   v.button_stop = 1;          break;
-      case modbus::Key::Homing: v.button_home = 1;          break;
-      case modbus::Key::Goto0:  v.button_go_to_home = 1;    break;
-      case modbus::Key::Park:   v.button_go_to_parking = 1; break;
-      case modbus::Key::Chuck:  v.chuck_clamp_unclamp = 1;  break;
-      case modbus::Key::Door:   v.door_open_close = 1;      break;
-      case modbus::Key::P1:     v.autoload_g_code1 = 1;     break;
-      case modbus::Key::P2:     v.autoload_g_code1 = 1;     break;
-      case modbus::Key::P3:     v.autoload_g_code1 = 1;     break;
-      default:
+         switch (modbus::key) {
+         case modbus::Key::Start:  v.button_start = 1;         break;
+         case modbus::Key::Stop:   v.button_stop = 1;          break;
+         case modbus::Key::Homing: v.button_home = 1;          break;
+         case modbus::Key::Goto0:  v.button_go_to_home = 1;    break;
+         case modbus::Key::Park:   v.button_go_to_parking = 1; break;
+         case modbus::Key::Chuck:  v.chuck_clamp_unclamp = 1;  break;
+         case modbus::Key::Door:   v.door_open_close = 1;      break;
+         case modbus::Key::P1:     v.autoload_g_code1 = 1;     break;
+         case modbus::Key::P2:     v.autoload_g_code1 = 1;     break;
+         case modbus::Key::P3:     v.autoload_g_code1 = 1;     break;
+         default:
+            break;
+         }
+
+         iomux::outputs = v; // Reactor guarantees atomicity
+
+         //
+         //  Map the switches
+         //
+
+         // If the release switch is on - set the matching OC output
+         Pin(ISO_OUT_RELEASE_STEPPER).set( modbus::switches.release );
+         
+         // Set the virtual LED mode
+         iomux::led::set(iomux::led::Id::virtual_release, iomux::led::Status::blinks);
+         
+         // Copy the virtual LED value to the modbus payload
+         modbus::console_leds.release = iomux::led::get(iomux::led::Id::virtual_release);
+
+         // Next stage
+         react_on_modbus_console_reply(1);
          break;
       }
 
-      iomux::outputs = v; // Reactor guarantees atomicity
+      case 1:
+         // Set the door LED (set the virtual LED to manage blinking then assign)
+         set_virtual(
+            iomux::led::Id::virtual_door,   // Virtual LED to set
+            not iomux::inputs.door_is_down, // Condition true (LED is on)
+            modbus::switches.door           // Condition blink
+         );
 
-      //
-      //  Map the switches
-      //
+         // Set the coolant console LED
+         set_virtual(
+            iomux::led::Id::virtual_cool,   // Virtual LED to set
+            iomux::inputs.spindle_is_on,    // Condition true (LED is on)
+            modbus::switches.cool           // Condition blink
+         );
 
-      // If the release switch is on - set the matching OC output
-      Pin(ISO_OUT_RELEASE_STEPPER).set( modbus::switches.release );
-      
-      // Set the virtual LED mode
-      iomux::led::set(iomux::led::Id::virtual_release, iomux::led::Status::blinks);
-      
-      // Copy the virtual LED value to the modbus payload
-      modbus::console_leds.release = iomux::led::get(iomux::led::Id::virtual_release);
+         // Set the dust
+         set_virtual(
+            iomux::led::Id::virtual_dust,   // Virtual LED to set
+            iomux::inputs.spindle_is_on,    // Condition true (LED is on)
+            modbus::switches.dust           // Condition blink
+         );
 
-      // Set the door LED (set the virtual LED to manage blinking then assign)
-      set_virtual(
-         iomux::led::Id::virtual_door,   // Virtual LED to set
-         not iomux::inputs.door_is_down, // Condition true (LED is on)
-         modbus::switches.door           // Condition blink
-      );
+         //
+         // Process the switches' Leds
+         // This is done here since we process modbus incomming data
+         //
+         modbus::console_leds.door    = iomux::virtual_leds.door;
+         modbus::console_leds.cool    = iomux::virtual_leds.cool;
+         modbus::console_leds.dust    = iomux::virtual_leds.dust;
+         modbus::console_leds.release = iomux::virtual_leds.release;
 
-      // Set the coolant console LED
-      set_virtual(
-         iomux::led::Id::virtual_cool,   // Virtual LED to set
-         iomux::inputs.spindle_is_on,    // Condition true (LED is on)
-         modbus::switches.cool           // Condition blink
-      );
+         // Next stage
+         react_on_modbus_console_reply(2);
+         break;
 
-      // Set the dust
-      set_virtual(
-         iomux::led::Id::virtual_dust,   // Virtual LED to set
-         iomux::inputs.spindle_is_on,    // Condition true (LED is on)
-         modbus::switches.dust           // Condition blink
-      );
+      case 2:
+      default:
+         //
+         // Process the push buttons LEDs
+         //
 
-      //
-      // Process the switches' Leds
-      // This is done here since we process modbus incomming data
-      //
-      modbus::console_leds.door    = iomux::virtual_leds.door;
-      modbus::console_leds.cool    = iomux::virtual_leds.cool;
-      modbus::console_leds.dust    = iomux::virtual_leds.dust;
-      modbus::console_leds.release = iomux::virtual_leds.release;
+         // Drive the virtual LED for ES
+         iomux::led::set(
+            iomux::led::Id::virtual_es,
+            iomux::inputs.es ?iomux::led::Status::blinks : iomux::led::Status::off
+         );
 
-      //
-      // Process the push buttons LEDs
-      //
-
-      // Drive the virtual LED for ES
-      iomux::led::set(
-         iomux::led::Id::virtual_es,
-         iomux::inputs.es ?iomux::led::Status::blinks : iomux::led::Status::off
-      );
-
-      // Override if the system is in STOP mode
-      if ( iomux::inputs.es ) {
-         if ( iomux::led::get(iomux::led::Id::virtual_es) ) {
-            modbus::console_leds.all |= modbus::MASK_OF_PUSH_BUTTONS_LEDS;
+         // Override if the system is in STOP mode
+         if ( iomux::inputs.es ) {
+            if ( iomux::led::get(iomux::led::Id::virtual_es) ) {
+               modbus::console_leds.all |= modbus::MASK_OF_PUSH_BUTTONS_LEDS;
+            } else {
+               modbus::console_leds.all ^= (~modbus::MASK_OF_PUSH_BUTTONS_LEDS);
+            }
          } else {
-            modbus::console_leds.all ^= (~modbus::MASK_OF_PUSH_BUTTONS_LEDS);
+            // For start/stop we use the tower light only
+            modbus::console_leds.start = iomux::inputs.tower_green;
+            modbus::console_leds.stop  = iomux::inputs.tower_red;
+
+            // For the park we use the key or the tower lights
+            modbus::console_leds.park =  
+               iomux::inputs.tower_yellow || modbus::key == modbus::Key::Homing;
+
+            // For the chuck, turn on when Masso controls the pneumatic
+            modbus::console_leds.change_tool = iomux::inputs.chuck_pressure;
+
+            // For the Goto), the key turn it on
+            modbus::console_leds.goto0 = (modbus::key == modbus::Key::Goto0);
+
+            // TODO : For now the key drives it
+            // For the door - use the state machine output. Blinks when the
+            // door is moving.
+            modbus::console_leds.door = (modbus::key == modbus::Key::Door);
          }
-      } else {
-         // For start/stop we use the tower light only
-         modbus::console_leds.start = iomux::inputs.tower_green;
-         modbus::console_leds.stop  = iomux::inputs.tower_red;
 
-         // For the park we use the key or the tower lights
-         modbus::console_leds.park =  
-            iomux::inputs.tower_yellow || modbus::key == modbus::Key::Homing;
-
-         // For the chuck, turn on when Masso controls the pneumatic
-         modbus::console_leds.change_tool = iomux::inputs.chuck_pressure;
-
-         // For the Goto), the key turn it on
-         modbus::console_leds.goto0 = (modbus::key == modbus::Key::Goto0);
-
-         // TODO : For now the key drives it
-         // For the door - use the state machine output. Blinks when the
-         // door is moving.
-         modbus::console_leds.door = (modbus::key == modbus::Key::Door);
+         break;
       }
    }
 
@@ -251,10 +304,11 @@ namespace patch {
       Pin(ISO_OUT_CAMERA_LIGHT      ).init(dir_t::out);
 
       // Start the i2c mux
-      //iomux::init( reactor::bind(on_refresh) );
+      TRACE_MILE(PATCH, "Starting iomux");
+      iomux::init( react_on_patch );
 
       // Start the modbus
       TRACE_MILE(PATCH, "Starting modbus");
-      modbus::init( reactor::bind(on_modbus_console_reply) );
+      modbus::init( react_on_modbus_console_reply );
    }
 }  // namespace patch

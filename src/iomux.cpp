@@ -10,9 +10,8 @@
 using namespace asx;
 using namespace std::chrono;
 
-constexpr auto BLINK_PERIOD = 500ms;
-
-
+/// @brief Period between blinking LED state change
+constexpr auto BLINK_PERIOD = 250ms;
 
 namespace iomux
 {
@@ -85,12 +84,7 @@ namespace iomux
             iomux_out.set_value(outputs.all, on_i2c_operation);
             break;
          case InitStage::ready:
-            Inputs delta;
-            delta.all = prev_inputs.all ^ inputs.all;
-
-            if ( delta.all ) {
-               react_on_input_change(delta.all);
-            }
+            react_on_input_change(0);
             return;
          default:
             alert_and_stop_if(true);
