@@ -145,19 +145,19 @@ namespace modbus {
       }
    }
 
-   void init( reactor::Handle update ) {
+   void init( reactor::Handle react_on_console_reply ) {
       using namespace std::chrono;
 
       // Register the reactor 'request' handle. First rejected are invoked first
 
-      // Beeps should be top priority
-      react_to_send_beep            = reactor::bind(beep_request,         reactor::prio::high);
+      // Beeps should be first to be handled
+      react_to_send_beep            = reactor::bind(beep_request);
 
       // Pneumatic requests are next
-      react_to_query_pneumatic      = reactor::bind(query_pneumatic,      reactor::prio::high);
-      react_to_query_console        = reactor::bind(query_console,        reactor::prio::high);
-      react_to_set_relay            = reactor::bind(set_relay,            reactor::prio::high);
-      react_to_console              = update;
+      react_to_query_pneumatic      = reactor::bind(query_pneumatic);
+      react_to_query_console        = reactor::bind(query_console);
+      react_to_set_relay            = reactor::bind(set_relay);
+      react_to_console              = react_on_console_reply;
 
       // Start the modbus cycle in 2 seconds (to match with when the LEDs turn off)
       modbus_master::init(reactor::bind(on_comm_error));
