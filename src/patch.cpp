@@ -15,14 +15,6 @@ namespace patch {
    using namespace asx::ioport;
    using namespace asx;
 
-   // Local functions
-   static void on_patch(uint8_t stage);
-   static void on_modbus_console_reply(uint8_t stage);
-
-   // Local reactors
-   static auto react_on_patch = reactor::bind(on_patch);
-   static auto react_on_modbus_console_reply = reactor::bind(on_modbus_console_reply);
-
    /**
     * Map comm status to LED status.
     * No comm - LED is off
@@ -59,11 +51,11 @@ namespace patch {
     * The function splits the operation to allow the Modbus operation
     * to take place in parallel limiting the jitter.
     */
-   void on_patch(uint8_t stage) {
+   static void on_patch(uint8_t stage) {
       // Keep the state of the beep to detect the edge
       static bool beep = false;
 
-      switch ( stage++ ) {
+      switch ( stage ) {
       case 0:
          // Sync pneumatics
          iomux::outputs.air_pressure_low_alarm = modbus::pressure_in;
@@ -80,7 +72,7 @@ namespace patch {
          Pin(ISO_OUT_CAMERA_LIGHT      ).set( iomux::inputs.camera_light );
 
          // Ask to plan the next step
-         react_on_patch(1);
+         reactor::yield(1);
          break;
 
       case 1:
@@ -95,7 +87,7 @@ namespace patch {
          );
 
          // Ask to plan the next step
-         react_on_patch(2);
+         reactor::yield(2);
          break;
 
       case 2:
@@ -110,7 +102,7 @@ namespace patch {
          iomux::led::set(iomux::led::Id::relay,         to_led_status(modbus::relay_comms_status));
 
          // Ask to plan the next step
-         react_on_patch(3);
+         reactor::yield(3);
          break;
 
       case 3:
@@ -165,7 +157,7 @@ namespace patch {
       }
    }
    
-   void on_modbus_console_reply(uint8_t stage) {
+   static void on_modbus_console_reply(uint8_t stage) {
       switch (stage) {
       case 0: {
          //
@@ -204,7 +196,7 @@ namespace patch {
          modbus::console_leds.release = iomux::led::get(iomux::led::Id::virtual_release);
 
          // Next stage
-         react_on_modbus_console_reply(1);
+         reactor::yield(1);
          break;
       }
 
@@ -240,7 +232,7 @@ namespace patch {
          modbus::console_leds.release = iomux::virtual_leds.release;
 
          // Next stage
-         react_on_modbus_console_reply(2);
+         reactor::yield(2);
          break;
 
       case 2:
@@ -300,10 +292,10 @@ namespace patch {
 
       // Start the i2c mux
       TRACE_MILE(PATCH, "Starting iomux");
-      iomux::init( react_on_patch );
+      iomux::init( reactor::bind(on_patch) );
 
       // Start the modbus
       TRACE_MILE(PATCH, "Starting modbus");
-      modbus::init( react_on_modbus_console_reply );
+      modbus::init( reactor::bind(on_modbus_console_reply) );
    }
 }  // namespace patch
