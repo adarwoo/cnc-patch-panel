@@ -98,8 +98,8 @@ namespace modbus {
       switches = static_cast<Switches>(_switches);
       key = static_cast<Key>(_key);
 
-      // Notfiy the external reactor
-      react_to_console.notify();
+      // Notfiy the external reactor (Stage is 0)
+      react_to_console(0);
 
       // Set the status to OK
       console_comms_status = CommStatus::ok;
