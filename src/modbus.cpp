@@ -30,9 +30,9 @@ namespace modbus {
    ConsoleLeds    console_leds           = ConsoleLeds{0};
    bool           pressure_in            = bool{false};
 
-   auto relay_comms_status     = CommStatus{};
-   auto pneu_comms_status      = CommStatus{};
-   auto console_comms_status   = CommStatus{};
+   CommStatus     relay_comms_status     = CommStatus::down;
+   CommStatus     pneu_comms_status      = CommStatus::down;
+   CommStatus     console_comms_status   = CommStatus::down;
 
    /// @brief called every 20ms to sample the console and pneumatic (every 100ms)
    ///   this may be followed by calls to other modbus devices
@@ -47,13 +47,13 @@ namespace modbus {
 
       // Throttle the number of relay
       if ( prescaler == 1 and current_relays_value.all != relays.all ) {
-         //modbus_master::request_to_send(react_to_set_relay);
+         // TODO modbus_master::request_to_send(react_to_set_relay);
          current_relays_value.all = relays.all;
       }
 
       // Throttle the number of pneumatic packets as this is not a priority
       if ( prescaler == 3 ) {
-         // modbus_master::request_to_send(react_to_query_pneumatic);
+         // TODO modbus_master::request_to_send(react_to_query_pneumatic);
       }
 
       if ( ++prescaler == 5 ) {
@@ -91,7 +91,6 @@ namespace modbus {
       } else {
          console_leds.all <<=1 ;
       }
-      #endif
    }
 
    /**

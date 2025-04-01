@@ -42,7 +42,7 @@ namespace patch {
       if ( modbus::coils.spindle_clean ) {
          return iomux::led::Status::blinks;
       }
-      
+
       return retval;
    }
 
@@ -148,7 +148,7 @@ namespace patch {
     * @param iomux::led::Id Id of the virtual LED to set
     * @param bool Nominal value
     * @param bool If true, blinks and ignore the nominal value
-    */ 
+    */
    inline void set_virtual(iomux::led::Id id, bool onoff, bool override) {
       if ( override ) {
          iomux::led::blink(id);
@@ -156,7 +156,7 @@ namespace patch {
          iomux::led::set(id, onoff);
       }
    }
-   
+
    static void on_modbus_console_reply(uint8_t stage) {
       switch (stage) {
       case 0: {
@@ -188,10 +188,10 @@ namespace patch {
 
          // If the release switch is on - set the matching OC output
          Pin(ISO_OUT_RELEASE_STEPPER).set( modbus::switches.release );
-         
+
          // Set the virtual LED mode
          iomux::led::set(iomux::led::Id::virtual_release, iomux::led::Status::blinks);
-         
+
          // Copy the virtual LED value to the modbus payload
          modbus::console_leds.release = iomux::led::get(iomux::led::Id::virtual_release);
 
@@ -260,7 +260,7 @@ namespace patch {
             modbus::console_leds.stop  = iomux::inputs.tower_red;
 
             // For the park we use the key or the tower lights
-            modbus::console_leds.park =  
+            modbus::console_leds.park =
                iomux::inputs.tower_yellow || modbus::key == modbus::Key::Homing;
 
             // For the chuck, turn on when Masso controls the pneumatic

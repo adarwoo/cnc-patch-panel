@@ -14,7 +14,7 @@ int main()
    patch::init();
 
    // Initialse the door controller
-   door::init();
+   // TODO door::init();
 
    // Run the reactor/scheduler
    asx::reactor::run();

@@ -12,7 +12,6 @@ namespace modbus {
       error = -2,
       down = -1,
       ok = 0,
-      starting = 1
    };
 
    // Define a union to combine uint16_t with bitfields
@@ -99,6 +98,10 @@ namespace modbus {
    extern PneumaticCoils coils;
    extern ConsoleLeds    console_leds;
    extern bool           pressure_in;
+
+   extern CommStatus     relay_comms_status;
+   extern CommStatus     pneu_comms_status;
+   extern CommStatus     console_comms_status;
 
    // Initialise passing a handler following a sucessfull reply
    void init(asx::reactor::Handle);
