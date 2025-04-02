@@ -9,7 +9,11 @@
 #define ISO_OUT_TOWER_LIGHT_GREEN   asx::ioport::PinDef(asx::ioport::A, 5)
 #define ISO_OUT_RELEASE_STEPPER     asx::ioport::PinDef(asx::ioport::C, 0)
 #define ISO_OUT_LASER_CROSS         asx::ioport::PinDef(asx::ioport::C, 1)
-#define ISO_OUT_CAMERA_LIGHT  asx::ioport::PinDef(asx::ioport::C, 2)
+#define ISO_OUT_CAMERA_LIGHT        asx::ioport::PinDef(asx::ioport::C, 2)
+
+// Modbus LEDs
+#define LED_MODBUS_RX               asx::ioport::PinDef(asx::ioport::A, 7)
+#define LED_MODBUS_TX               asx::ioport::PinDef(asx::ioport::A, 6)
 
 // Alert pin
 #define ALERT_OUTPUT_PIN            IOPORT_CREATE_PIN(PORTA, 3)
