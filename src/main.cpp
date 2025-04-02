@@ -44,6 +44,9 @@ namespace {
 ISR(CCL_CCL_vect) {
    // Get the reactor to start the timer and manage the LED
    asx::reactor::notify_from_isr(react_on_tx_started);
+
+   // Clear all the flag
+   CCL_INTFLAGS = 0x0F;
 }
 
 /**
@@ -52,6 +55,7 @@ ISR(CCL_CCL_vect) {
  * The timer B0 is uses to create a visible pulse. The timer starts when a rising edge
  *  is detected on the Rx/Tx pin. The direction pin is used to drive Tx or Rx.
  * This toggles the flip flop and the timer resets the flip flop.
+ * We use the PIT timer which we assume is running at 32768Hz to feed the timerB0
  */
 void setup_modbus_activity_leds() {
    #pragma GCC diagnostic ignored "-Wdeprecated-enum-enum-conversion"
@@ -72,6 +76,9 @@ void setup_modbus_activity_leds() {
    // Channel 3 reports the output of the LUT0 output (RTX & ~DIR)
    EVSYS_CHANNEL3 = EVSYS_CHANNEL3_CCL_LUT0_gc;
 
+   // Channel 5 (Odd channel) feeds from the RTC clock (configured at 32k) - so 2ms pulse
+   EVSYS_CHANNEL5 = EVSYS_CHANNEL5_RTC_PIT_DIV64_gc;
+
    // Intputs of LUT0 is channel 0 and channel 1 (and NC)
    EVSYS_USERCCLLUT0A = EVSYS_USER_CHANNEL0_gc; // XDIR
    EVSYS_USERCCLLUT0B = EVSYS_USER_CHANNEL1_gc; // Rx/Tx
@@ -81,11 +88,12 @@ void setup_modbus_activity_leds() {
    CCL_LUT0CTRLA = CCL_ENABLE_bm;
 
    // Channel 3 (RTX & ~DIR) starts Timer B0
-   EVSYS_USERTCB0CAPT = EVSYS_USER_CHANNEL3_gc;  // Channel 3 (LUT0) starts a single shot
-   TCB0.CTRLA = TCB_CLKSEL_DIV2_gc;
+   EVSYS_USERTCB0CAPT = EVSYS_USER_CHANNEL3_gc;   // Channel 3 (LUT0) starts a single shot
+   EVSYS_USERTCB0COUNT = EVSYS_USER_CHANNEL5_gc;  // Channel 5 (RTC Clock)
+   TCB0.CTRLA = TCB_CLKSEL_EVENT_gc;              // Use the event channel as a clock source
    TCB0.CTRLB = TCB_ASYNC_bm | TCB_CNTMODE_SINGLE_gc;
-   TCB0.CCMP = 65535; // Width of the pulse is 6.5535ms (max)
-   TCB0.CTRLA = TCB_CLKSEL_DIV2_gc | TCB_ENABLE_bm;
+   TCB0.CCMP = 5;                                 // 10ms pulse
+   TCB0.CTRLA = TCB_CLKSEL_DIV1_gc | TCB_ENABLE_bm;
 
    // Intputs of LUT1 is channel 2 (Output of TCB0)
    EVSYS_USERCCLLUT1A = EVSYS_USER_CHANNEL2_gc;  // EVENTA of LUT1 is Event channel 2 (TCB0)
