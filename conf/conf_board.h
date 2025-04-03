@@ -13,6 +13,10 @@
 
 // Modbus LEDs
 #define LED_MODBUS_RX               asx::ioport::PinDef(asx::ioport::A, 7)
+// NOTE: Requires mod to PCB. Originally connected to the i2c INT pin 
+#define LED_MODBUS_TX               asx::ioport::PinDef(asx::ioport::A, 5)
+
+// I2C bus open collector for interrupt
 #define LED_MODBUS_TX               asx::ioport::PinDef(asx::ioport::A, 6)
 
 // Alert pin
