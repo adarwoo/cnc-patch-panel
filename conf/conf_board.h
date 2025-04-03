@@ -17,7 +17,7 @@
 #define LED_MODBUS_TX               asx::ioport::PinDef(asx::ioport::A, 5)
 
 // I2C bus open collector for interrupt
-#define LED_MODBUS_TX               asx::ioport::PinDef(asx::ioport::A, 6)
+#define I2C_INT                     asx::ioport::PinDef(asx::ioport::A, 6)
 
 // Alert pin
 #define ALERT_OUTPUT_PIN            IOPORT_CREATE_PIN(PORTA, 3)
