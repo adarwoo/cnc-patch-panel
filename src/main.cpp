@@ -47,7 +47,7 @@ ISR(CCL_CCL_vect) {
 
    // Clear all the flag
    CCL_INTFLAGS = 0x0F;
-}
+}  
 
 /**
  * Combine the event system with the configurable custom logic to drive
@@ -70,8 +70,8 @@ void setup_modbus_activity_leds() {
    // Channel 1 reports XDIR direction selection
    EVSYS_CHANNEL1 = EVSYS_CHANNEL1_PORTA_PIN4_gc;
 
-   // Channel 2 reports the timer TCB0 pulse
-   EVSYS_CHANNEL2 = EVSYS_CHANNEL2_TCB0_CAPT_gc;
+   // Channel 2 reports the timer TCB1 pulse
+   EVSYS_CHANNEL2 = EVSYS_CHANNEL2_TCB1_CAPT_gc;
 
    // Channel 3 reports the output of the LUT0 output (RTX & ~DIR)
    EVSYS_CHANNEL3 = EVSYS_CHANNEL3_CCL_LUT0_gc;
@@ -88,12 +88,12 @@ void setup_modbus_activity_leds() {
    CCL_LUT0CTRLA = CCL_ENABLE_bm;
 
    // Channel 3 (RTX & ~DIR) starts Timer B0
-   EVSYS_USERTCB0CAPT = EVSYS_USER_CHANNEL3_gc;   // Channel 3 (LUT0) starts a single shot
-   EVSYS_USERTCB0COUNT = EVSYS_USER_CHANNEL5_gc;  // Channel 5 (RTC Clock)
-   TCB0.CTRLA = TCB_CLKSEL_EVENT_gc;              // Use the event channel as a clock source
-   TCB0.CTRLB = TCB_ASYNC_bm | TCB_CNTMODE_SINGLE_gc;
-   TCB0.CCMP = 5;                                 // 10ms pulse
-   TCB0.CTRLA = TCB_CLKSEL_DIV1_gc | TCB_ENABLE_bm;
+   EVSYS_USERTCB1CAPT = EVSYS_USER_CHANNEL3_gc;   // Channel 3 (LUT0) starts a single shot
+   EVSYS_USERTCB1COUNT = EVSYS_USER_CHANNEL5_gc;  // Channel 5 (RTC Clock)
+   TCB1.CTRLA = TCB_CLKSEL_EVENT_gc;              // Use the event channel as a clock source
+   TCB1.CTRLB = TCB_ASYNC_bm | TCB_CNTMODE_SINGLE_gc;
+   TCB1.CCMP = 5;                                 // 10ms pulse
+   TCB1.CTRLA = TCB_CLKSEL_EVENT_gc | TCB_ENABLE_bm;
 
    // Intputs of LUT1 is channel 2 (Output of TCB0)
    EVSYS_USERCCLLUT1A = EVSYS_USER_CHANNEL2_gc;  // EVENTA of LUT1 is Event channel 2 (TCB0)
