@@ -24,19 +24,11 @@ namespace iomux {
          clean,
          door_opening,
          door_closing,
-         END_OF_LEDS,
-         virtual_door,
-         virtual_release,
-         virtual_dust,
-         virtual_cool,
          virtual_es,
-         END_OF_VIRTUAL
+         END_OF_LEDS
       };
 
       constexpr auto COUNT = static_cast<uint8_t>(Id::END_OF_LEDS);
-      constexpr auto VIRTUAL_FIRST_INDEX = COUNT + 1;
-      constexpr auto COUNT_VIRTUAL =
-         static_cast<uint8_t>(Id::END_OF_VIRTUAL) - VIRTUAL_FIRST_INDEX;
 
       constexpr uint16_t BM(auto port, auto bit_pos) {
          uint8_t shift_by = bit_pos;
@@ -63,17 +55,8 @@ namespace iomux {
          BM(1,3),  // chuck
          BM(1,4),  // clean
          BM(1,5),  // door_opening
-         BM(1,6)   // door_closing
-      };
-
-      union Virtual {
-         uint8_t all;
-         struct {
-            uint8_t door : 1;
-            uint8_t release : 1;
-            uint8_t dust : 1;
-            uint8_t cool : 1;
-         };
+         BM(1,6),  // door_closing
+         BM(1,7)   // Virtual ES (Not connected)
       };
 
       enum class Status : uint8_t {
@@ -142,7 +125,6 @@ namespace iomux {
    //
    inline auto inputs       = Inputs{0};
    inline auto outputs      = Outputs{0};
-   inline auto virtual_leds = led::Virtual{0};
 
    // Unique function to init the iomux and take case of the i2c
    void init(asx::reactor::Handle);

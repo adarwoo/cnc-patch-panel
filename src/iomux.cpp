@@ -54,11 +54,8 @@ namespace iomux
    auto prev_inputs = Inputs{0};
 
    // Manage blinking for all LEDs
-   auto led_blink_next_change = 
+   auto led_blink_next_change =
       std::array<timer::steady_clock::time_point, led::COUNT>{};
-
-   auto virtual_blink_next_change = 
-      std::array<timer::steady_clock::time_point, led::COUNT_VIRTUAL>{};
 
    // Value of the LED output
    auto leds_fb = uint16_t{0};
@@ -98,13 +95,13 @@ namespace iomux
    }
 
    namespace led {
-      constexpr auto time_zero = 
+      constexpr auto time_zero =
          timer::steady_clock::time_point(timer::steady_clock::duration::zero());
 
       static inline uint16_t mask_of(const Id id) {
          return masks[static_cast<uint8_t>(id)];
       }
-   
+
       Status state_of(Id id) {
          auto _id = static_cast<uint8_t>(id);
 
@@ -161,8 +158,8 @@ namespace iomux
     * Entry point for the periodic refresh of the i2c ops
     */
    void on_refresh(uint8_t yield_to) {
-      auto status = i2c::Master::get_status();
       static auto now = timer::steady_clock::now();
+      auto status = i2c::Master::get_status();
 
       if ( status == i2c::status_code_t::STATUS_OK ) {
          switch (yield_to) {
@@ -172,21 +169,11 @@ namespace iomux
             stage = InitStage::read_input;
 
             // Update blinking
-            auto now = timer::steady_clock::now();
-
-            // This only computes the state of the virtual LED so it can be used to control the console LEDs
-            for ( uint8_t index=0; index < virtual_blink_next_change.size(); ++index) {
-               auto next_change = virtual_blink_next_change[index];
-
-               if ( next_change >= now ) {
-                  virtual_blink_next_change[index] = next_change + BLINK_PERIOD;
-                  virtual_leds.all ^= 1<<index;
-               }
-            }
+            now = timer::steady_clock::now();
 
             // Yield till next time
             reactor::yield(1);
-            
+
             break;
          }
          default:

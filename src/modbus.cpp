@@ -14,7 +14,12 @@
 
 namespace modbus {
    using namespace asx;
+   using namespace std::chrono;
+
    using asx::modbus::command_t;
+
+   /// @brief Period between blinking LED state change
+   constexpr auto BLINK_PERIOD = 250ms;
 
    // Reactor handles
    reactor::Handle react_to_send_beep;
@@ -34,6 +39,50 @@ namespace modbus {
    CommStatus     pneu_comms_status      = CommStatus::down;
    CommStatus     console_comms_status   = CommStatus::down;
 
+   // Manage blinking for all LEDs
+   auto led_blink_next_change =
+      std::array<timer::steady_clock::time_point, 4>{};
+
+   auto led_status =
+      std::array<bool, 4>{0};
+
+   constexpr auto time_zero =
+      timer::steady_clock::time_point(timer::steady_clock::duration::zero());
+
+   /** Return the current status of the LED */
+   bool get_led(uint8_t id) {
+      return led_status[id];
+   }
+
+   /**
+    * Set a virtual LED based on condition
+    * @param iomux::led::Id Id of the virtual LED to set
+    * @param bool Nominal value
+    * @param bool If true, blinks and ignore the nominal value
+    */
+   void set_led(uint8_t id, bool onoff, bool override) {
+      if ( override ) {
+         auto now = timer::steady_clock::now();
+
+         if ( led_blink_next_change[id] == time_zero ) {
+            led_blink_next_change[id] = now;
+            led_status[id] = true;
+         } else {
+            if ( now - led_blink_next_change[id] > BLINK_PERIOD ) {
+               led_status[id] = !led_status[id];
+               led_blink_next_change[id] += BLINK_PERIOD;
+            }
+         }
+      } else {
+         led_blink_next_change[id] == time_zero;
+         led_status[id] = onoff;
+      }
+   }
+
+   /// @brief When LEDs should change state
+   auto blink_next_change =
+      std::array<timer::steady_clock::time_point, 4>{};
+
    /// @brief called every 20ms to sample the console and pneumatic (every 100ms)
    ///   this may be followed by calls to other modbus devices
    /// Calls the console every cycle
@@ -41,21 +90,17 @@ namespace modbus {
    /// C CR C CP C | C CR C CP C ... every 100ms
    void on_modbus_cycle() {
       static uint8_t prescaler = 0;
-      static auto current_relays_value = Relays{0};
 
-      // TODO modbus_master::request_to_send(react_to_query_console);
-      modbus_master::request_to_send(react_to_set_relay);
-      return ;
+      modbus_master::request_to_send(react_to_query_console);
 
       // Throttle the number of relay
-      if ( prescaler == 1 and current_relays_value.all != relays.all ) {
-         // TODO modbus_master::request_to_send(react_to_set_relay);
-         current_relays_value.all = relays.all;
+      if ( prescaler == 2 ) {
+         modbus_master::request_to_send(react_to_set_relay);
       }
 
       // Throttle the number of pneumatic packets as this is not a priority
       if ( prescaler == 3 ) {
-         // TODO modbus_master::request_to_send(react_to_query_pneumatic);
+         // TODO : modbus_master::request_to_send(react_to_query_pneumatic);
       }
 
       if ( ++prescaler == 5 ) {
@@ -84,15 +129,8 @@ namespace modbus {
       // Update the Leds. The reply contains the switches and push button state
       Datagram::pack(console_address);
       Datagram::pack(command_t::custom);
-      Datagram::pack(console_leds.all);
-
-      if ( console_leds.all == 0 ) {
-         console_leds.all = 1;
-      } else if ( console_leds.all == 0b100000000000) {
-         console_leds.all = 0;
-      } else {
-         console_leds.all <<=1 ;
-      }
+      Datagram::pack(console_leds.lsb);
+      Datagram::pack(console_leds.msb);
    }
 
    /**
@@ -131,7 +169,7 @@ namespace modbus {
       key = static_cast<Key>(_key);
 
       // Notfiy the external reactor (Stage is 0)
-      react_to_console(0);
+      react_to_console();
 
       // Set the status to OK
       console_comms_status = CommStatus::ok;
@@ -180,6 +218,14 @@ namespace modbus {
    }
 
    /**
+    * Request a 'beep' from the console
+    */
+   void beep() {
+      // Request to transmit a beep request
+      modbus_master::request_to_send(react_to_send_beep);
+   }
+
+   /**
     * Ready the modbus master and the query cycle
     * @param react_on_console_reply
     *        Reactor handle to call once a reply from the console has been
@@ -203,15 +249,6 @@ namespace modbus {
       modbus_master::init(reactor::bind(on_comm_error));
 
       // Start the modbus queries after 2s (relay will take 5)
-      // TODO reactor::bind(on_modbus_cycle).repeat(2s, 20ms);
-      reactor::bind(on_modbus_cycle).repeat(1s, 500ms);
-   }
-
-   /**
-    * Request a 'beep' from the console
-    */
-   void beep() {
-      // Request to transmit a beep request
-      modbus_master::request_to_send(react_to_send_beep);
+      reactor::bind(on_modbus_cycle).repeat(2s, 20ms);
    }
 }  // namespace modbus

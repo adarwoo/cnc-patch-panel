@@ -42,7 +42,7 @@ namespace patch {
       if ( modbus::coils.spindle_clean ) {
          return iomux::led::Status::blinks;
       }
-      
+
       return retval;
    }
 
@@ -117,14 +117,6 @@ namespace patch {
          iomux::outputs.door_sensor_input = modbus::switches.door || iomux::inputs.door_is_down;
 
          //
-         // Process the switches' Leds
-         //
-         modbus::console_leds.door    = iomux::virtual_leds.door;
-         modbus::console_leds.cool    = iomux::virtual_leds.cool;
-         modbus::console_leds.dust    = iomux::virtual_leds.dust;
-         modbus::console_leds.release = iomux::virtual_leds.release;
-
-         //
          // Sounder (for door alarm)
          //
          modbus::console_leds.sounder = iomux::inputs.sounder;
@@ -144,138 +136,117 @@ namespace patch {
    }
 
    /**
-    * Set a virtual LED based on condition
-    * @param iomux::led::Id Id of the virtual LED to set
-    * @param bool Nominal value
-    * @param bool If true, blinks and ignore the nominal value
-    */ 
-   inline void set_virtual(iomux::led::Id id, bool onoff, bool override) {
-      if ( override ) {
-         iomux::led::blink(id);
-      } else {
-         iomux::led::set(id, onoff);
-      }
-   }
-   
-   static void on_modbus_console_reply(uint8_t stage) {
-      switch (stage) {
-      case 0: {
-         //
-         // Map the keys to the output
-         //
-         iomux::Outputs v{0};
+    * Collect the console reply and process
+    */
+   void on_modbus_console_reply() {
+      //
+      // Map the keys to the output
+      //
+      iomux::Outputs v{0};
 
-         switch (modbus::key) {
-         case modbus::Key::Start:  v.button_start = 1;         break;
-         case modbus::Key::Stop:   v.button_stop = 1;          break;
-         case modbus::Key::Homing: v.button_home = 1;          break;
-         case modbus::Key::Goto0:  v.button_go_to_home = 1;    break;
-         case modbus::Key::Park:   v.button_go_to_parking = 1; break;
-         case modbus::Key::Chuck:  v.chuck_clamp_unclamp = 1;  break;
-         case modbus::Key::Door:   v.door_open_close = 1;      break;
-         case modbus::Key::P1:     v.autoload_g_code1 = 1;     break;
-         case modbus::Key::P2:     v.autoload_g_code1 = 1;     break;
-         case modbus::Key::P3:     v.autoload_g_code1 = 1;     break;
-         default:
-            break;
-         }
-
-         iomux::outputs = v; // Reactor guarantees atomicity
-
-         //
-         //  Map the switches
-         //
-
-         // If the release switch is on - set the matching OC output
-         Pin(ISO_OUT_RELEASE_STEPPER).set( modbus::switches.release );
-         
-         // Set the virtual LED mode
-         iomux::led::set(iomux::led::Id::virtual_release, iomux::led::Status::blinks);
-         
-         // Copy the virtual LED value to the modbus payload
-         modbus::console_leds.release = iomux::led::get(iomux::led::Id::virtual_release);
-
-         // Next stage
-         reactor::yield(1);
-         break;
-      }
-
-      case 1:
-         // Set the door LED (set the virtual LED to manage blinking then assign)
-         set_virtual(
-            iomux::led::Id::virtual_door,   // Virtual LED to set
-            not iomux::inputs.door_is_down, // Condition true (LED is on)
-            modbus::switches.door           // Condition blink
-         );
-
-         // Set the coolant console LED
-         set_virtual(
-            iomux::led::Id::virtual_cool,   // Virtual LED to set
-            iomux::inputs.spindle_is_on,    // Condition true (LED is on)
-            modbus::switches.cool           // Condition blink
-         );
-
-         // Set the dust
-         set_virtual(
-            iomux::led::Id::virtual_dust,   // Virtual LED to set
-            iomux::inputs.spindle_is_on,    // Condition true (LED is on)
-            modbus::switches.dust           // Condition blink
-         );
-
-         //
-         // Process the switches' Leds
-         // This is done here since we process modbus incomming data
-         //
-         modbus::console_leds.door    = iomux::virtual_leds.door;
-         modbus::console_leds.cool    = iomux::virtual_leds.cool;
-         modbus::console_leds.dust    = iomux::virtual_leds.dust;
-         modbus::console_leds.release = iomux::virtual_leds.release;
-
-         // Next stage
-         reactor::yield(2);
-         break;
-
-      case 2:
+      switch (modbus::key) {
+      case modbus::Key::Start:  v.button_start = 1;         break;
+      case modbus::Key::Stop:   v.button_stop = 1;          break;
+      case modbus::Key::Homing: v.button_home = 1;          break;
+      case modbus::Key::Goto0:  v.button_go_to_home = 1;    break;
+      case modbus::Key::Park:   v.button_go_to_parking = 1; break;
+      case modbus::Key::Chuck:  v.chuck_clamp_unclamp = 1;  break;
+      case modbus::Key::Door:   v.door_open_close = 1;      break;
+      case modbus::Key::P1:     v.autoload_g_code1 = 1;     break;
+      case modbus::Key::P2:     v.autoload_g_code1 = 1;     break;
+      case modbus::Key::P3:     v.autoload_g_code1 = 1;     break;
       default:
-         //
-         // Process the push buttons LEDs
-         //
-
-         // Drive the virtual LED for ES
-         iomux::led::set(
-            iomux::led::Id::virtual_es,
-            iomux::inputs.es ?iomux::led::Status::blinks : iomux::led::Status::off
-         );
-
-         // Override if the system is in STOP mode
-         if ( iomux::inputs.es ) {
-            if ( iomux::led::get(iomux::led::Id::virtual_es) ) {
-               modbus::console_leds.all |= modbus::MASK_OF_PUSH_BUTTONS_LEDS;
-            } else {
-               modbus::console_leds.all ^= (~modbus::MASK_OF_PUSH_BUTTONS_LEDS);
-            }
-         } else {
-            // For start/stop we use the tower light only
-            modbus::console_leds.start = iomux::inputs.tower_green;
-            modbus::console_leds.stop  = iomux::inputs.tower_red;
-
-            // For the park we use the key or the tower lights
-            modbus::console_leds.park =  
-               iomux::inputs.tower_yellow || modbus::key == modbus::Key::Homing;
-
-            // For the chuck, turn on when Masso controls the pneumatic
-            modbus::console_leds.change_tool = iomux::inputs.chuck_pressure;
-
-            // For the Goto), the key turn it on
-            modbus::console_leds.goto0 = (modbus::key == modbus::Key::Goto0);
-
-            // TODO : For now the key drives it
-            // For the door - use the state machine output. Blinks when the
-            // door is moving.
-            modbus::console_leds.door = (modbus::key == modbus::Key::Door);
-         }
-
          break;
+      }
+
+      iomux::outputs = v; // Reactor guarantees atomicity
+
+      //
+      //  Map the switches
+      //
+
+      // If the release switch is on - set the matching OC output
+      Pin(ISO_OUT_RELEASE_STEPPER).set( modbus::switches.release );
+
+      // Set the console LED
+      modbus::set_led(
+         modbus::release_led_id,
+         false,                       // Condition ON
+         modbus::switches.release     // Condition blink
+      );
+
+      // Set the door LED (set the virtual LED to manage blinking then assign)
+      modbus::set_led(
+         modbus::door_led_id,            // LED to drive
+         not iomux::inputs.door_is_down, // Condition true (LED is on)
+         modbus::switches.door           // Condition blink
+      );
+
+      // Set the coolant console LED
+      modbus::set_led(
+         modbus::cool_led_id,
+         iomux::inputs.spindle_is_on,    // Condition true (LED is on)
+         modbus::switches.cool           // Condition blink
+      );
+
+      // Set the dust
+      modbus::set_led(
+         modbus::dust_led_id,            // LED to set
+         iomux::inputs.spindle_is_on,    // Condition true (LED is on)
+         modbus::switches.dust           // Condition blink
+      );
+
+      //
+      // Process the switches' Leds
+      // This is done here since we process modbus incomming data
+      //
+      modbus::console_leds.door    = modbus::get_led(modbus::door_led_id);
+      modbus::console_leds.cool    = modbus::get_led(modbus::cool_led_id);
+      modbus::console_leds.dust    = modbus::get_led(modbus::dust_led_id);
+      modbus::console_leds.release = modbus::get_led(modbus::release_led_id);
+
+      //
+      // Drive the relays from the switch and other items
+      //
+      modbus::relays.cool = modbus::switches.cool || iomux::inputs.spindle_is_on;
+      modbus::relays.dust = modbus::switches.dust || iomux::inputs.spindle_is_on;
+
+      //
+      // Process the push buttons LEDs
+      //
+
+      // Drive the virtual LED for ES
+      iomux::led::set(
+         iomux::led::Id::virtual_es,
+         iomux::inputs.es ?iomux::led::Status::blinks : iomux::led::Status::off
+      );
+
+      // Override if the system is in STOP mode
+      if ( iomux::inputs.es ) {
+         if ( iomux::led::get(iomux::led::Id::virtual_es) ) {
+            modbus::console_leds.all |= modbus::MASK_OF_PUSH_BUTTONS_LEDS;
+         } else {
+            modbus::console_leds.all ^= (~modbus::MASK_OF_PUSH_BUTTONS_LEDS);
+         }
+      } else {
+         // For start/stop we use the tower light only
+         modbus::console_leds.start = iomux::inputs.tower_green;
+         modbus::console_leds.stop  = iomux::inputs.tower_red;
+
+         // For the park we use the key or the tower lights
+         modbus::console_leds.park =
+            iomux::inputs.tower_yellow || modbus::key == modbus::Key::Homing;
+
+         // For the chuck, turn on when Masso controls the pneumatic
+         modbus::console_leds.change_tool = iomux::inputs.chuck_pressure;
+
+         // For the Goto), the key turn it on
+         modbus::console_leds.goto0 = (modbus::key == modbus::Key::Goto0);
+
+         // TODO : For now the key drives it
+         // For the door - use the state machine output. Blinks when the
+         // door is moving.
+         modbus::console_leds.door = (modbus::key == modbus::Key::Door);
       }
    }
 

@@ -50,21 +50,26 @@ namespace modbus {
    // Define a union to combine uint16_t with bitfields
    union ConsoleLeds {
       uint16_t all;
+
       struct {
-         uint16_t start : 1;  // Bit0
-         uint16_t stop : 1;
-         uint16_t home : 1;
-         uint16_t goto0 : 1;
-         uint16_t park : 1;
+         uint8_t lsb;
+         uint8_t msb;
+      };
+
+      struct {
+         uint16_t start       : 1;  // Bit0
+         uint16_t stop        : 1;
+         uint16_t home        : 1;
+         uint16_t goto0       : 1;
+         uint16_t park        : 1;
          uint16_t change_tool : 1;
-         uint16_t cool : 1; // Bit0
-         uint16_t dust : 1;
-         uint16_t release : 1;
-         uint16_t door : 1;
-         uint16_t reserved0 : 1;
-         uint16_t reserved1 : 1;
-         uint16_t reserved2 : 1;
-         uint16_t sounder : 1; // Not an LED! The sounder is mapped as an LED for efficient operation
+         uint16_t reserved0   : 2;
+         uint16_t cool        : 1; // Bit0
+         uint16_t dust        : 1;
+         uint16_t release     : 1;
+         uint16_t door        : 1;
+         uint16_t reserved1   : 3;
+         uint16_t sounder     : 1; // Not an LED! The sounder is mapped as an LED for efficient operation
       };
    };
 
@@ -102,6 +107,17 @@ namespace modbus {
    extern CommStatus     relay_comms_status;
    extern CommStatus     pneu_comms_status;
    extern CommStatus     console_comms_status;
+
+   static constexpr auto door_led_id = 0;
+   static constexpr auto dust_led_id = 1;
+   static constexpr auto cool_led_id = 2;
+   static constexpr auto release_led_id = 3;
+
+   // Change the state of an led
+   void set_led(uint8_t id, bool onoff, bool override);
+
+   // Read the state (on/off) of an LED
+   bool get_led(uint8_t id);
 
    // Initialise passing a handler following a sucessfull reply
    void init(asx::reactor::Handle);
