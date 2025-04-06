@@ -16,7 +16,7 @@ Modbus({
     # Console
     "device@37": [
         (CUSTOM,                u8(alias="switches"),
-                                u8(alias="push_buttons"), 
+                                u8(alias="push_buttons"),
                                 "on_console_reply"),
     ],
 
@@ -24,8 +24,6 @@ Modbus({
     "device@44": [
         (WRITE_MULTIPLE_COILS,  u16(0), # The product write all relays from 0
                                 u16(3), # 3 relays read
-                                u8(1),
-                                u16(alias="data"),
                                 "on_relay_reply"),
     ],
 
