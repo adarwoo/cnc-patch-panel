@@ -1,26 +1,42 @@
 #pragma once
+/**
+ * Defines all I/Os of the board using PinDef
+ * Compatible with C and C++ use (ioport.h or asx/ioport.hpp)
+ * In C++, the namespace asx::ioport must be used
+ */
 
 /************************************************************************/
 /* Functional I/Os                                                      */
 /************************************************************************/
-#define ISO_OUT_ES                  asx::ioport::PinDef(asx::ioport::B, 2)
-#define ISO_OUT_TOWER_LIGHT_RED     asx::ioport::PinDef(asx::ioport::B, 3)
-#define ISO_OUT_TOWER_LIGHT_YELLOW  asx::ioport::PinDef(asx::ioport::B, 4)
-#define ISO_OUT_TOWER_LIGHT_GREEN   asx::ioport::PinDef(asx::ioport::A, 5)
-#define ISO_OUT_RELEASE_STEPPER     asx::ioport::PinDef(asx::ioport::C, 0)
-#define ISO_OUT_LASER_CROSS         asx::ioport::PinDef(asx::ioport::C, 1)
-#define ISO_OUT_CAMERA_LIGHT        asx::ioport::PinDef(asx::ioport::C, 2)
+#define ISO_OUT_ES                  PinDef(B, 2)
+#define ISO_OUT_TOWER_LIGHT_RED     PinDef(B, 3)
+#define ISO_OUT_TOWER_LIGHT_YELLOW  PinDef(B, 4)
+#define ISO_OUT_TOWER_LIGHT_GREEN   PinDef(A, 5)
+#define ISO_OUT_RELEASE_STEPPER     PinDef(C, 0)
+#define ISO_OUT_LASER_CROSS         PinDef(C, 1)
+#define ISO_OUT_CAMERA_LIGHT        PinDef(C, 2)
 
-// Modbus LEDs
-#define LED_MODBUS_RX               asx::ioport::PinDef(asx::ioport::A, 7)
-// NOTE: Requires mod to PCB. Originally connected to the i2c INT pin 
-#define LED_MODBUS_TX               asx::ioport::PinDef(asx::ioport::A, 5)
+/************************************************************************/
+/* Modbus LEDs                                                          */
+/************************************************************************/
+#define LED_MODBUS_RX               PinDef(A, 5)
+#define LED_MODBUS_TX               PinDef(A, 7)
 
-// I2C bus open collector for interrupt
-#define I2C_INT                     asx::ioport::PinDef(asx::ioport::A, 6)
+/************************************************************************/
+/* I2C bus open collector for interrupt                                 */
+/************************************************************************/
+#define I2C_INT                     PinDef(A, 6)
 
-// Alert pin
-#define ALERT_OUTPUT_PIN            IOPORT_CREATE_PIN(PORTA, 3)
+/************************************************************************/
+/* Alert pin                                                            */
+/************************************************************************/
+#define ALERT_OUTPUT_PIN            PinDef(A, 3)
 
-// Debug pins
-#define DEBUG_REACTOR_IDLE          IOPORT_CREATE_PIN(PORTA, 2)
+/************************************************************************/
+/* Debug pins                                                           */
+/************************************************************************/
+#define DEBUG_REACTOR_BUSY          PinDef(A, 2)
+#define DEBUG_TRACE                 PinDef(C, 3)
+
+// To quick debug with trace : add:
+// asm("sbi 9,3"); asm("cbi 9,3");
