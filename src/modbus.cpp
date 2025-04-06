@@ -43,7 +43,9 @@ namespace modbus {
       static uint8_t prescaler = 0;
       static auto current_relays_value = Relays{0};
 
-      modbus_master::request_to_send(react_to_query_console);
+      // TODO modbus_master::request_to_send(react_to_query_console);
+      modbus_master::request_to_send(react_to_set_relay);
+      return ;
 
       // Throttle the number of relay
       if ( prescaler == 1 and current_relays_value.all != relays.all ) {
@@ -110,7 +112,7 @@ namespace modbus {
       Datagram::pack(command_t::write_multiple_coils);
       Datagram::pack(0);           // Start address
       Datagram::pack(3);           // Quantity
-      Datagram::pack<uint8_t>(2);  // Byte count (2*N)
+      Datagram::pack<uint8_t>(1);  // Byte count
       Datagram::pack(relays.all);
    }
 
@@ -157,8 +159,9 @@ namespace modbus {
    /**
     * Called when an error was detected
     */
-   void on_comm_error(uint8_t device_id, bool comm_lost) {
-      auto new_status = comm_lost ? CommStatus::down : CommStatus::error;
+   void on_comm_error(uint8_t device_id, asx::modbus::error_t error) {
+      auto new_status = (error == asx::modbus::error_t::reply_timeout)
+         ? CommStatus::down : CommStatus::error;
 
       switch (device_id) {
       case console_address:
@@ -200,7 +203,8 @@ namespace modbus {
       modbus_master::init(reactor::bind(on_comm_error));
 
       // Start the modbus queries after 2s (relay will take 5)
-      reactor::bind(on_modbus_cycle).repeat(2s, 20ms);
+      // TODO reactor::bind(on_modbus_cycle).repeat(2s, 20ms);
+      reactor::bind(on_modbus_cycle).repeat(1s, 500ms);
    }
 
    /**
