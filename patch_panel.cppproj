@@ -218,6 +218,12 @@
     <Compile Include="asx\include\asx\modbus_rtu.hpp">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="asx\include\asx\modbus_rtu_master.hpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="asx\include\asx\modbus_rtu_slave.hpp">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="asx\include\asx\pca9555.hpp">
       <SubType>compile</SubType>
     </Compile>
