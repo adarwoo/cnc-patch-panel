@@ -14,7 +14,7 @@ using namespace std::chrono;
 constexpr auto BLINK_PERIOD = 250ms;
 
 // Split the LED refresh into iterations
-constexpr auto MAX_LEDS_TO_PROCESS_PER_ITERATIONS = 4;
+constexpr auto MAX_LEDS_TO_PROCESS_PER_ITERATIONS = 2;
 
 namespace iomux
 {
