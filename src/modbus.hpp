@@ -16,11 +16,11 @@ namespace modbus {
 
    // Define a union to combine uint16_t with bitfields
    union Relays {
-      uint16_t all;
+      uint8_t all;
       struct {
-         uint16_t dust : 1; // Bit0
-         uint16_t cool : 1;
-         uint16_t spare : 1;
+         uint8_t dust : 1; // Bit0
+         uint8_t cool : 1;
+         uint8_t spare : 1;
       };
    };
 
