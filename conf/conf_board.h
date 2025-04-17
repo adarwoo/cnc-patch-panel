@@ -11,7 +11,7 @@
 #define ISO_OUT_ES                  PinDef(B, 2)
 #define ISO_OUT_TOWER_LIGHT_RED     PinDef(B, 3)
 #define ISO_OUT_TOWER_LIGHT_YELLOW  PinDef(B, 4)
-#define ISO_OUT_TOWER_LIGHT_GREEN   PinDef(A, 5)
+#define ISO_OUT_TOWER_LIGHT_GREEN   PinDef(B, 5)
 #define ISO_OUT_RELEASE_STEPPER     PinDef(C, 0)
 #define ISO_OUT_LASER_CROSS         PinDef(C, 1)
 #define ISO_OUT_CAMERA_LIGHT        PinDef(C, 2)
@@ -20,7 +20,7 @@
 /* Modbus LEDs                                                          */
 /************************************************************************/
 #define LED_MODBUS_RX               PinDef(A, 5)
-#define LED_MODBUS_TX               PinDef(A, 7)
+#define LED_MODBUS_TX               PinDef(A, 3)
 
 /************************************************************************/
 /* I2C bus open collector for interrupt                                 */
@@ -30,7 +30,7 @@
 /************************************************************************/
 /* Alert pin                                                            */
 /************************************************************************/
-#define ALERT_OUTPUT_PIN            PinDef(A, 3)
+#define ALERT_OUTPUT_PIN            PinDef(A, 7)
 
 /************************************************************************/
 /* Debug pins                                                           */

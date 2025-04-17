@@ -31,60 +31,50 @@ using namespace std::chrono;
 void setup_modbus_activity_leds() {
    #pragma GCC diagnostic ignored "-Wdeprecated-enum-enum-conversion"
 
-   //
-   // Setup common channel for Rx and Tx
-   //
+   // Pulse duration
 
-   // Channel generators
-   EVSYS_CHANNEL0 = EVSYS_CHANNEL0_PORTA_PIN1_gc; // Rx/Tx activity
-   EVSYS_CHANNEL1 = EVSYS_CHANNEL1_PORTA_PIN4_gc; // XDIR direction selection
-   EVSYS_CHANNEL2 = EVSYS_CHANNEL2_CCL_LUT0_gc;   // Output of the LUT0 (RTX & ~XDIR)
-   EVSYS_CHANNEL3 = EVSYS_CHANNEL3_CCL_LUT2_gc;   // Output of the LUT2 (RTX & XDIR)
-   EVSYS_CHANNEL4 = EVSYS_CHANNEL4_TCB1_CAPT_gc;  // Output of TCB1 capture
-   EVSYS_CHANNEL5 = EVSYS_CHANNEL5_RTC_PIT_DIV64_gc; // RTC/64 = 2ms pulse
+   // Define a custom duration type representing one tick of the PIT/64 clock
+   using tick_duration = duration<int64_t, std::ratio<1, 32768 / 64>>;   
+   
+   // Set the pulse duration
+   constexpr auto pulse_duration = duration_cast<tick_duration>(5ms);
 
-   // Channel users
-   EVSYS_USERCCLLUT2A  = EVSYS_USER_CHANNEL0_gc;  // LUT2-EVENTA  = Ch0 [Rx/Tx activity]
-   EVSYS_USERCCLLUT2B  = EVSYS_USER_CHANNEL1_gc;  // LUT2-EVENTB  = Ch1 [XDIR]
-   EVSYS_USERTCB0CAPT  = EVSYS_USER_CHANNEL2_gc;  // TCB0 Capture = Ch2 [LUT0-OUT=RxTx & ~XDIR]
-   EVSYS_USERTCB1CAPT  = EVSYS_USER_CHANNEL3_gc;  // TCB1 Capture = Ch3 [LUT2-OUT=RxTx & XDIR]
-   EVSYS_USERCCLLUT1A  = EVSYS_USER_CHANNEL4_gc;  // LUT1-EVENTA  = Ch4 [TCB1 Capt]
-   EVSYS_USERTCB0COUNT = EVSYS_USER_CHANNEL5_gc;  // TCB0 Count   = Ch5 [2ms pulse]
-   EVSYS_USERTCB1COUNT = EVSYS_USER_CHANNEL5_gc;  // TCB1 Count   = Ch5 [2ms pulse]
+   // Event channels configuration
+   EVSYS.CHANNEL0 = EVSYS_CHANNEL0_PORTA_PIN1_gc;    // Rx/Tx activity
+   EVSYS.CHANNEL1 = EVSYS_CHANNEL1_PORTA_PIN4_gc;    // XDIR direction selection
+   EVSYS.CHANNEL2 = EVSYS_CHANNEL2_CCL_LUT0_gc;      // Output of the LUT2 (RTX & ~XDIR)
+   EVSYS.CHANNEL3 = EVSYS_CHANNEL3_RTC_PIT_DIV64_gc; // Output of the periodic timer
 
-   //
-   // Manage Rx pin (driven directly from the TCB0 output)
-   //
-   CCL_LUT0CTRLB = CCL_INSEL0_EVENTA_gc | CCL_INSEL1_EVENTB_gc; // EventA->INSEL0 / EventB->INSEL1
-   CCL_LUT0CTRLC = 0; // Not used
-   CCL_TRUTH0 = 0b100; // And of LUT0_IN1 and ~LUT0_IN0, LUT0-OUT = RTX & ~DIR
-   CCL_LUT0CTRLA = CCL_ENABLE_bm;
+   EVSYS.USERCCLLUT0A  = EVSYS_USER_CHANNEL0_gc;     // LUT2-EVENTA  = Ch0 [Rx/Tx activity]
+   EVSYS.USERCCLLUT0B  = EVSYS_USER_CHANNEL1_gc;     // LUT2-EVENTB  = Ch1 [XDIR]
+  
+   EVSYS.USERTCB0CAPT  = EVSYS_USER_CHANNEL2_gc;     // TCB0 Capture = Ch2 [LUT2-OUT=RxTx & ~XDIR]
+   EVSYS.USERTCB0COUNT = EVSYS_USER_CHANNEL3_gc;     // TCB0 count uses channel 3
+   EVSYS.USERTCB1CAPT  = EVSYS_USER_CHANNEL1_gc;     // TCB1 Capture = Ch1 [XDIR]
+   EVSYS.USERTCB1COUNT = EVSYS_USER_CHANNEL3_gc;     // TCB1 count uses channel 3
+   
+   // LUT0 configurations : IN0[A]=Ch0/RTX | IN1[B]=Ch1/XDIR | IN2[-] => Channel 2
+   CCL.LUT0CTRLB = CCL_INSEL0_EVENTA_gc | CCL_INSEL1_EVENTB_gc;
+   CCL.LUT0CTRLC = 0;
+   CCL.TRUTH0    = 1; // LUT2_OUT = (~A & ~B) => CH0 & ~CH1 => ~RTX & ~DIR
+   CCL.LUT0CTRLA = CCL_ENABLE_bm;
 
-   // Channel 2 (RTX & ~DIR) starts TCB0
-   TCB0.CTRLB = TCB_CCMPEN_bm | TCB_ASYNC_bm | TCB_CNTMODE_SINGLE_gc; // Enable the output
-   TCB0.CCMP = 5;                                 // 10ms pulse
+   // TCB0 configuration : Drives the Rx pin directly
+   TCB0.CCMP = pulse_duration.count();
+   TCB0.CNT = pulse_duration.count();
+   TCB0.EVCTRL = TCB_CAPTEI_bm | TCB_FILTER_bm; // Turn on event detection
+   TCB0.CTRLB = TCB_ASYNC_bm | TCB_CCMPEN_bm | TCB_CNTMODE_SINGLE_gc; // Enable the output
    TCB0.CTRLA = TCB_CLKSEL_EVENT_gc | TCB_ENABLE_bm; // Use the event channel as a clock source
 
-   //
-   // Manage Tx pin (driven directly from the LUT1 output, as TCB1 WO is not avail.)
-   //
-   CCL_LUT2CTRLB = CCL_INSEL0_EVENTA_gc | CCL_INSEL1_EVENTB_gc; // EventA->INSEL0 / EventB->INSEL1
-   CCL_LUT2CTRLC = 0; // Not used
-   CCL_TRUTH2 = 0b1000; // LUT2_OUT = LUT0_IN1 and LUT0_IN0
-   CCL_LUT2CTRLA = CCL_ENABLE_bm;
-
-   TCB1.CTRLB = TCB_ASYNC_bm | TCB_CNTMODE_SINGLE_gc; // No output
-   TCB1.CCMP = 5;                                 // 10ms pulse
-   TCB1.CTRLA = TCB_CLKSEL_EVENT_gc | TCB_ENABLE_bm; // Use the event channel as a clock source
-
-   // We need to take the timer output and route it through LUT1
-   CCL_LUT1CTRLB = CCL_INSEL0_EVENTA_gc; // LUT1_IN0 = TCB0, LUT1_IN1 = None
-   CCL_LUT1CTRLC = 0; // LUT1_IN2 = None
-   CCL_TRUTH1 = 0b10; // OUT = EVENTA so the pin can be driven
-   CCL_LUT1CTRLA = CCL_OUTEN_bm | CCL_ENABLE_bm; // Enable, and drive the output pin (PA7 - Tx)
+   // TCB1 -> Drives the Tx pin directly
+   TCB1.CCMP = pulse_duration.count();
+   TCB1.CNT = pulse_duration.count();
+   TCB1.EVCTRL = TCB_CAPTEI_bm | TCB_FILTER_bm; // Turn on event detection
+   TCB1.CTRLB = TCB_ASYNC_bm | TCB_CCMPEN_bm | TCB_CNTMODE_SINGLE_gc; // Enable the output
+   TCB1.CTRLA = TCB_CLKSEL_EVENT_gc | TCB_ENABLE_bm;  // Use the event channel as a clock source
 
    // Activate the CCL for both
-   CCL_CTRLA = CCL_ENABLE_bm;
+   CCL.CTRLA = CCL_ENABLE_bm;
 }
 
 
@@ -105,7 +95,6 @@ int main()
    Pin(LED_MODBUS_RX).init(dir_t::out, value_t::high);
    Pin(LED_MODBUS_TX).init(dir_t::out, value_t::high);
    Pin(ALERT_OUTPUT_PIN).set(true);
-
 
    // Use LEDs as intended past 2s
    asx::reactor::bind([]() {
