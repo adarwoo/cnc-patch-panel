@@ -17,7 +17,7 @@ namespace modbus {
    using Uart = asx::uart::Uart<1, UartConfig>;
    using modbus_master = asx::modbus::Master<Datagram, Uart>;
 
-   constexpr auto console_address = uint8_t{37};
-   constexpr auto pneumatic_relay_address = uint8_t{49};
-   constexpr auto relay_address = uint8_t{44};
+   constexpr auto console_address         = uint8_t{37}; // 0x25
+   constexpr auto relay_address           = uint8_t{44}; // 0x2C
+   constexpr auto pneumatic_relay_address = uint8_t{49}; // 0x31
 }
