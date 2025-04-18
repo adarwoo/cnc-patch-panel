@@ -91,20 +91,22 @@ namespace modbus {
    void on_modbus_cycle() {
       static uint8_t prescaler = 0;
 
-      modbus_master::request_to_send(react_to_query_console);
+      if ( modbus_master::get_pending_request().is_empty() ) {
+         modbus_master::request_to_send(react_to_query_console);
 
-      // Throttle the number of relay
-      if ( prescaler == 2 ) {
-         modbus_master::request_to_send(react_to_set_relay);
-      }
+         // Throttle the number of relay
+         if ( prescaler == 2 ) {
+            modbus_master::request_to_send(react_to_set_relay);
+         }
 
-      // Throttle the number of pneumatic packets as this is not a priority
-      if ( prescaler == 3 ) {
-         // TODO : modbus_master::request_to_send(react_to_query_pneumatic);
-      }
+         // Throttle the number of pneumatic packets as this is not a priority
+         if ( prescaler == 3 ) {
+            // TODO : modbus_master::request_to_send(react_to_query_pneumatic);
+         }
 
-      if ( ++prescaler == 5 ) {
-         prescaler = 0;
+         if ( ++prescaler == 5 ) {
+            prescaler = 0;
+         }
       }
    }
 
@@ -203,7 +205,7 @@ namespace modbus {
 
       switch (device_id) {
       case console_address:
-         relay_comms_status = new_status;
+         console_comms_status = new_status;
          break;
       case pneumatic_relay_address:
          pneu_comms_status = new_status;
@@ -246,7 +248,9 @@ namespace modbus {
       react_to_console              = react_on_console_reply;
 
       // Start the modbus cycle in 2 seconds (to match with when the LEDs turn off)
-      modbus_master::init(reactor::bind(on_comm_error));
+      using HandlerFn = void (*)(uint8_t, asx::modbus::error_t);
+
+      modbus_master::init(reactor::bind<HandlerFn>(on_comm_error));
 
       // Start the modbus queries after 2s (relay will take 5)
       reactor::bind(on_modbus_cycle).repeat(2s, 20ms);

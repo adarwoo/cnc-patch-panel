@@ -37,7 +37,7 @@ void setup_modbus_activity_leds() {
    using tick_duration = duration<int64_t, std::ratio<1, 32768 / 64>>;   
    
    // Set the pulse duration
-   constexpr auto pulse_duration = duration_cast<tick_duration>(5ms);
+   constexpr auto pulse_duration = duration_cast<tick_duration>(4ms);
 
    // Event channels configuration
    EVSYS.CHANNEL0 = EVSYS_CHANNEL0_PORTA_PIN1_gc;    // Rx/Tx activity
