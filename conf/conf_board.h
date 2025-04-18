@@ -38,5 +38,6 @@
 #define DEBUG_REACTOR_BUSY          PinDef(A, 2)
 #define DEBUG_TRACE                 PinDef(C, 3)
 
-// To quick debug with trace : add:
-// asm("sbi 9,3"); asm("cbi 9,3");
+// To quick debug with trace pin
+#define TRACE_ON                    {asm("sbi 9,3");}
+#define TRACE_OFF                   {asm("cbi 9,3");}
