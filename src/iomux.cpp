@@ -137,10 +137,9 @@ namespace iomux
          auto _id = static_cast<uint8_t>(id);
 
          if ( led_blink_next_change[_id] == time_zero ) {
-            led_blink_next_change[_id] = timer::steady_clock::now() + BLINK_PERIOD;
+            led_blink_next_change[_id] = timer::steady_clock::now();
+            leds_fb |= mask_of(id);
          }
-
-         leds_fb |= mask_of(id);
       }
 
       void set(Id id, Status status) {
