@@ -62,15 +62,16 @@ namespace modbus {
     */
    void set_led(uint8_t id, bool onoff, bool override) {
       if ( override ) {
+         // Blink it!
          auto now = timer::steady_clock::now();
 
          if ( led_blink_next_change[id] == time_zero ) {
-            led_blink_next_change[id] = now;
-            led_status[id] = true;
+            led_blink_next_change[id] = now + BLINK_PERIOD;
+            led_status[id] = true; // Set to start with (reacts immediately)
          } else {
-            if ( now - led_blink_next_change[id] > BLINK_PERIOD ) {
+            if ( led_blink_next_change[id] <= now ) {
                led_status[id] = !led_status[id];
-               led_blink_next_change[id] += BLINK_PERIOD;
+               led_blink_next_change[id] = now + BLINK_PERIOD;
             }
          }
       } else {
@@ -131,8 +132,8 @@ namespace modbus {
       // Update the Leds. The reply contains the switches and push button state
       Datagram::pack(console_address);
       Datagram::pack(command_t::custom);
-      Datagram::pack(console_leds.lsb);
       Datagram::pack(console_leds.msb);
+      Datagram::pack(console_leds.lsb);
    }
 
    /**

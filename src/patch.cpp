@@ -177,7 +177,7 @@ namespace patch {
 
       // Set the door LED (set the virtual LED to manage blinking then assign)
       modbus::set_led(
-         modbus::door_led_id,            // LED to drive
+         modbus::override_led_id,        // LED to drive
          not iomux::inputs.door_is_down, // Condition true (LED is on)
          modbus::switches.door           // Condition blink
       );
@@ -200,10 +200,10 @@ namespace patch {
       // Process the switches' Leds
       // This is done here since we process modbus incomming data
       //
-      modbus::console_leds.door    = modbus::get_led(modbus::door_led_id);
-      modbus::console_leds.cool    = modbus::get_led(modbus::cool_led_id);
-      modbus::console_leds.dust    = modbus::get_led(modbus::dust_led_id);
-      modbus::console_leds.release = modbus::get_led(modbus::release_led_id);
+      modbus::console_leds.override = modbus::get_led(modbus::override_led_id);
+      modbus::console_leds.cool     = modbus::get_led(modbus::cool_led_id);
+      modbus::console_leds.dust     = modbus::get_led(modbus::dust_led_id);
+      modbus::console_leds.release  = modbus::get_led(modbus::release_led_id);
 
       //
       // Drive the relays from the switch and other items
@@ -218,7 +218,7 @@ namespace patch {
       // Drive the virtual LED for ES
       iomux::led::set(
          iomux::led::Id::virtual_es,
-         iomux::inputs.es ?iomux::led::Status::blinks : iomux::led::Status::off
+         iomux::inputs.es ? iomux::led::Status::blinks : iomux::led::Status::off
       );
 
       // Override if the system is in STOP mode
@@ -226,7 +226,7 @@ namespace patch {
          if ( iomux::led::get(iomux::led::Id::virtual_es) ) {
             modbus::console_leds.all |= modbus::MASK_OF_PUSH_BUTTONS_LEDS;
          } else {
-            modbus::console_leds.all ^= (~modbus::MASK_OF_PUSH_BUTTONS_LEDS);
+            modbus::console_leds.all &= (~modbus::MASK_OF_PUSH_BUTTONS_LEDS);
          }
       } else {
          // For start/stop we use the tower light only
@@ -234,19 +234,22 @@ namespace patch {
          modbus::console_leds.stop  = iomux::inputs.tower_red;
 
          // For the park we use the key or the tower lights
-         modbus::console_leds.park =
+         modbus::console_leds.home =
             iomux::inputs.tower_yellow || modbus::key == modbus::Key::Homing;
 
          // For the chuck, turn on when Masso controls the pneumatic
          modbus::console_leds.change_tool = iomux::inputs.chuck_pressure;
 
-         // For the Goto), the key turn it on
-         modbus::console_leds.goto0 = (modbus::key == modbus::Key::Goto0);
-
          // TODO : For now the key drives it
          // For the door - use the state machine output. Blinks when the
          // door is moving.
          modbus::console_leds.door = (modbus::key == modbus::Key::Door);
+         
+         // Set all other LED's based on the push-button position
+         modbus::console_leds.park  = (modbus::key == modbus::Key::Park);
+         modbus::console_leds.goto0 = (modbus::key == modbus::Key::Goto0);
+         modbus::console_leds.door  = (modbus::key == modbus::Key::Door);
+         modbus::console_leds.shift = 0;
       }
    }
 

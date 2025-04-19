@@ -27,10 +27,10 @@ namespace modbus {
    union Switches {
       uint16_t all;
       struct {
-         uint16_t cool : 1; // Bit0
-         uint16_t dust : 1;
-         uint16_t release : 1;
          uint16_t door : 1;
+         uint16_t dust : 1;
+         uint16_t cool : 1; // Bit0
+         uint16_t release : 1;
       };
    };
 
@@ -57,30 +57,30 @@ namespace modbus {
       };
 
       struct {
-         uint16_t start       : 1;  // Bit0
-         uint16_t stop        : 1;
+         uint16_t override    : 1;
+         uint16_t dust        : 1;
+         uint16_t cool        : 1;
+         uint16_t release     : 1;
+         uint16_t door        : 1;
+         uint16_t shift       : 1;
+         uint16_t start       : 1;
          uint16_t home        : 1;
+         uint16_t stop        : 1;
          uint16_t goto0       : 1;
          uint16_t park        : 1;
          uint16_t change_tool : 1;
-         uint16_t reserved0   : 2;
-         uint16_t cool        : 1; // Bit0
-         uint16_t dust        : 1;
-         uint16_t release     : 1;
-         uint16_t door        : 1;
-         uint16_t reserved1   : 3;
          uint16_t sounder     : 1; // Not an LED! The sounder is mapped as an LED for efficient operation
       };
    };
 
    // Mask for the push buttons LEDs
-   static constexpr auto MASK_OF_PUSH_BUTTONS_LEDS = 0b111111;
+   static constexpr auto MASK_OF_PUSH_BUTTONS_LEDS = 0b111111110000;
 
    enum class Key : uint8_t {
       None   = 0,
       Start  = 1,
-      Stop   = 2,
-      Homing = 3,
+      Homing = 2,
+      Stop   = 3,
       Goto0  = 4,
       Park   = 5,
       Chuck  = 6,
@@ -108,7 +108,7 @@ namespace modbus {
    extern CommStatus     pneu_comms_status;
    extern CommStatus     console_comms_status;
 
-   static constexpr auto door_led_id = 0;
+   static constexpr auto override_led_id = 0;
    static constexpr auto dust_led_id = 1;
    static constexpr auto cool_led_id = 2;
    static constexpr auto release_led_id = 3;
