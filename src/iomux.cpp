@@ -46,7 +46,7 @@ namespace iomux
    // Reactor to call periodically
    auto react_on_refresh = reactor::bind(on_refresh);
 
-   static auto iomux_out = i2c::PCA9555(0);        // IOMux 0 For input pins
+   static auto iomux_out = i2c::PCA9555(0);        // IOMux 0 For output pins
    static auto iomux_in  = i2c::PCA9555(6);        // IOMux 6 For input pins
    static auto iomux_led = i2c::PCA9555(1);        // IOMux 1 For LEDs
 
@@ -67,7 +67,7 @@ namespace iomux
          case InitStage::init_led_val: iomux_led.set_value(0xffff, on_i2c_operation); break;
          case InitStage::init_led_dir: iomux_led.set_dir  (0,      on_i2c_operation); break;
          case InitStage::init_out_val: iomux_out.set_value(0,      on_i2c_operation); break;
-         case InitStage::init_out_dir: iomux_out.set_value(0,      on_i2c_operation); break;
+         case InitStage::init_out_dir: iomux_out.set_dir  (0,      on_i2c_operation); break;
          case InitStage::init_in_dir:  iomux_in. set_dir  (0xffff, on_i2c_operation); break;
          case InitStage::init_poll:
             using namespace std::chrono;
@@ -134,10 +134,11 @@ namespace iomux
       }
 
       void blink(Id id) {
-         auto _id = static_cast<uint8_t>(id);
+         auto index = static_cast<uint8_t>(id);
 
-         if ( led_blink_next_change[_id] == time_zero ) {
-            led_blink_next_change[_id] = timer::steady_clock::now();
+         if ( led_blink_next_change[index] == time_zero ) {
+            led_blink_next_change[index] = timer::steady_clock::now() + BLINK_PERIOD;
+            // Note : will glitch once every 47days!
             leds_fb |= mask_of(id);
          }
       }
@@ -189,9 +190,9 @@ namespace iomux
             while (id < id_to) {
                auto next_change = led_blink_next_change[id];
 
-               if ( next_change >= now ) {
+               if ( next_change != led::time_zero and next_change <= now) {
                   leds_fb ^= led::masks[id];
-                  led_blink_next_change[id] = next_change + BLINK_PERIOD;
+                  led_blink_next_change[id] = now + BLINK_PERIOD;
                }
 
                ++id;
