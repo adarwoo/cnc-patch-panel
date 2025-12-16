@@ -1,9 +1,11 @@
 #include <array>
 #include <cstdint>
+#include <chrono>
+
+#include <ulog.h>
 
 #include <asx/ioport.hpp>
 #include <asx/reactor.hpp>
-#include <trace.h>
 
 #include "conf_board.h"
 
@@ -14,6 +16,9 @@
 namespace patch {
    using namespace asx::ioport;
    using namespace asx;
+
+   // Define the delay before turning the compressor on
+   constexpr auto COMPRESSOR_START_DELAY = std::chrono::seconds(12);
 
    /**
     * Map comm status to LED status.
@@ -254,25 +259,26 @@ namespace patch {
    }
 
    void init() {
-      using namespace std::chrono;
-
-      Pin(ISO_OUT_ES                ).init(dir_t::out);
-      Pin(ISO_OUT_TOWER_LIGHT_RED   ).init(dir_t::out);
-      Pin(ISO_OUT_TOWER_LIGHT_YELLOW).init(dir_t::out);
-      Pin(ISO_OUT_TOWER_LIGHT_GREEN ).init(dir_t::out);
-      Pin(ISO_OUT_RELEASE_STEPPER   ).init(dir_t::out);
-      Pin(ISO_OUT_LASER_CROSS       ).init(dir_t::out);
-      Pin(ISO_OUT_CAMERA_LIGHT      ).init(dir_t::out);
-
-      // Use the AVR event and logic cell to drive the Modbus (RS485) LEDS automatically (0 software)
-      // using the remaining timerB
+      ISO_OUT_ES                .init(dir_t::out);
+      ISO_OUT_TOWER_LIGHT_RED   .init(dir_t::out);
+      ISO_OUT_TOWER_LIGHT_YELLOW.init(dir_t::out);
+      ISO_OUT_TOWER_LIGHT_GREEN .init(dir_t::out);
+      ISO_OUT_RELEASE_STEPPER   .init(dir_t::out);
+      ISO_OUT_LASER_CROSS       .init(dir_t::out);
+      ISO_OUT_CAMERA_LIGHT      .init(dir_t::out);
 
       // Start the i2c mux
-      TRACE_MILE(PATCH, "Starting iomux");
+      ULOG_MILE("Starting iomux");
       iomux::init( reactor::bind(on_patch) );
 
       // Start the modbus
-      TRACE_MILE(PATCH, "Starting modbus");
+      ULOG_MILE("Starting modbus");
       modbus::init( reactor::bind(on_modbus_console_reply) );
+
+      // Turn the compressor on after 12 seconds
+      reactor::bind([]() {
+         ULOG_MILE("Turning compressor on");
+         modbus::relays.compressor = 1;
+      }).delay(COMPRESSOR_START_DELAY);
    }
 }  // namespace patch

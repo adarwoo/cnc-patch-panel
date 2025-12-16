@@ -18,9 +18,9 @@ namespace modbus {
    union Relays {
       uint8_t all;
       struct {
-         uint8_t dust : 1; // Bit0
+         uint8_t compressor : 1; // Bit0
          uint8_t cool : 1;
-         uint8_t spare : 1;
+         uint8_t dust : 1; 
       };
    };
 

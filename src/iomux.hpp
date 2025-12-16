@@ -4,6 +4,7 @@
 #include <asx/reactor.hpp>
 #include <asx/timer.hpp>
 
+
 namespace iomux {
    /// @brief Callback for processing the update inputs and outputs
    using ProcessInputCb = void(*)();

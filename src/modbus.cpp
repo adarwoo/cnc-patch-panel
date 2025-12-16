@@ -1,10 +1,9 @@
 #include <array>
 #include <cstdint>
 
+#include <ulog.h>
 #include <asx/ioport.hpp>
 #include <asx/reactor.hpp>
-
-#include <trace.h>
 
 #include "conf_board.h"
 #include "conf_modbus.hpp"
@@ -14,12 +13,12 @@
 
 namespace modbus {
    using namespace asx;
-   using namespace std::chrono;
+   using namespace asx::chrono;
 
    using asx::modbus::command_t;
 
    /// @brief Period between blinking LED state change
-   constexpr auto BLINK_PERIOD = 250ms;
+   constexpr auto BLINK_PERIOD = std::chrono::milliseconds(250);
 
    // Reactor handles
    reactor::Handle react_to_send_beep;
@@ -41,13 +40,10 @@ namespace modbus {
 
    // Manage blinking for all LEDs
    auto led_blink_next_change =
-      std::array<timer::steady_clock::time_point, 4>{};
+      std::array<steady_clock::time_point, 4>{};
 
    auto led_status =
       std::array<bool, 4>{0};
-
-   constexpr auto time_zero =
-      timer::steady_clock::time_point(timer::steady_clock::duration::zero());
 
    /** Return the current status of the LED */
    bool get_led(uint8_t id) {
@@ -63,9 +59,9 @@ namespace modbus {
    void set_led(uint8_t id, bool onoff, bool override) {
       if ( override ) {
          // Blink it!
-         auto now = timer::steady_clock::now();
+         auto now = chrono::steady_clock::now();
 
-         if ( led_blink_next_change[id] == time_zero ) {
+         if ( led_blink_next_change[id] == chrono::time_zero ) {
             led_blink_next_change[id] = now + BLINK_PERIOD;
             led_status[id] = true; // Set to start with (reacts immediately)
          } else {
@@ -75,14 +71,14 @@ namespace modbus {
             }
          }
       } else {
-         led_blink_next_change[id] == time_zero;
+         led_blink_next_change[id] == chrono::time_zero;
          led_status[id] = onoff;
       }
    }
 
    /// @brief When LEDs should change state
    auto blink_next_change =
-      std::array<timer::steady_clock::time_point, 4>{};
+      std::array<steady_clock::time_point, 4>{};
 
    /// @brief called every 20ms to sample the console and pneumatic (every 100ms)
    ///   this may be followed by calls to other modbus devices
@@ -102,7 +98,7 @@ namespace modbus {
 
          // Throttle the number of pneumatic packets as this is not a priority
          if ( prescaler == 3 ) {
-            // TODO : modbus_master::request_to_send(react_to_query_pneumatic);
+            modbus_master::request_to_send(react_to_query_pneumatic);
          }
 
          if ( ++prescaler == 5 ) {

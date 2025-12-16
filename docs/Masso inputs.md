@@ -141,3 +141,9 @@ This is the list of connectors, functions and connections.
    | D16 |<span style="color: orange;">orange</span>|Spindle clean           |         | 11   |
    | D17 |<span style="color: green;">green</span>  |Door opening status     | blink=opening<br/>on=error | 12 |
    | D18 |<span style="color: orange;">orange</span>|Door closing status     |         | 13   |
+
+
+# TODO :
+
+1. If comm is lost with the pneumatic hub - should the ES be triggered?
+2. The relay module should monitor comms and break if comms is lost for >5s

@@ -1,15 +1,16 @@
 /*
  * Console modbus device main entry point.
  */
-#include <chrono>
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#include <trace.h>
 #include <debug.h>
+#include <ulog.h>
+
 #include <asx/ioport.hpp>
 #include <asx/reactor.hpp>
+#include <asx/chrono.hpp>
 
 #include "patch.hpp"
 #include "door.hpp"
@@ -80,10 +81,10 @@ void setup_modbus_activity_leds() {
 
 int main()
 {
-   TRACE_MILE(APP, "CNC Patch starting");
+   ULOG_MILE("CNC Patch starting");
 
    // Init our unique debug pin called TRACE
-   Pin(DEBUG_TRACE).init(dir_t::out, value_t::low);
+   DEBUG_TRACE.init(dir_t::out, value_t::low);
 
    // Initialse the patch management (i2c, gpio and modbus sequencer)
    patch::init();
@@ -92,9 +93,9 @@ int main()
    // TODO door::init();
 
    // Turn on all LEDs for 2 seconds
-   Pin(LED_MODBUS_RX).init(dir_t::out, value_t::high);
-   Pin(LED_MODBUS_TX).init(dir_t::out, value_t::high);
-   Pin(ALERT_OUTPUT_PIN).set(true);
+   LED_MODBUS_RX.init(dir_t::out, value_t::high);
+   LED_MODBUS_TX.init(dir_t::out, value_t::high);
+   ALERT_OUTPUT_PIN.set(true);
 
    // Use LEDs as intended past 2s
    asx::reactor::bind([]() {

@@ -1,6 +1,7 @@
-#include <chrono>
 #include <array>
+#include <chrono>
 
+#include <asx/chrono.hpp>
 #include <asx/reactor.hpp>
 #include <asx/timer.hpp>
 #include <asx/pca9555.hpp>
@@ -8,10 +9,11 @@
 #include "iomux.hpp"
 
 using namespace asx;
-using namespace std::chrono;
+using asx::chrono::time_zero;
+using asx::chrono::steady_clock;
 
 /// @brief Period between blinking LED state change
-constexpr auto BLINK_PERIOD = 250ms;
+constexpr auto BLINK_PERIOD = std::chrono::milliseconds(250);
 
 // Split the LED refresh into iterations
 constexpr auto MAX_LEDS_TO_PROCESS_PER_ITERATIONS = 2;
@@ -55,7 +57,7 @@ namespace iomux
 
    // Manage blinking for all LEDs
    auto led_blink_next_change =
-      std::array<timer::steady_clock::time_point, led::COUNT>{};
+      std::array<steady_clock::time_point, led::COUNT>{};
 
    // Value of the LED output
    auto leds_fb = uint16_t{0};
@@ -95,9 +97,6 @@ namespace iomux
    }
 
    namespace led {
-      constexpr auto time_zero =
-         timer::steady_clock::time_point(timer::steady_clock::duration::zero());
-
       static inline uint16_t mask_of(const Id id) {
          return masks[static_cast<uint8_t>(id)];
       }
@@ -137,7 +136,7 @@ namespace iomux
          auto index = static_cast<uint8_t>(id);
 
          if ( led_blink_next_change[index] == time_zero ) {
-            led_blink_next_change[index] = timer::steady_clock::now() + BLINK_PERIOD;
+            led_blink_next_change[index] = steady_clock::now() + BLINK_PERIOD;
             // Note : will glitch once every 47days!
             leds_fb |= mask_of(id);
          }
@@ -158,7 +157,7 @@ namespace iomux
     * Entry point for the periodic refresh of the i2c ops
     */
    void on_refresh(uint8_t yield_to) {
-      static auto now = timer::steady_clock::now();
+      static auto now = steady_clock::now();
       auto status = i2c::Master::get_status();
 
       if ( status == i2c::status_code_t::STATUS_OK ) {
@@ -169,7 +168,7 @@ namespace iomux
             stage = InitStage::read_input;
 
             // Update blinking
-            now = timer::steady_clock::now();
+            now = steady_clock::now();
 
             // Yield till next time
             reactor::yield(1);
@@ -190,7 +189,7 @@ namespace iomux
             while (id < id_to) {
                auto next_change = led_blink_next_change[id];
 
-               if ( next_change != led::time_zero and next_change <= now) {
+               if ( next_change != time_zero and next_change <= now) {
                   leds_fb ^= led::masks[id];
                   led_blink_next_change[id] = now + BLINK_PERIOD;
                }
