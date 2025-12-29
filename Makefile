@@ -23,8 +23,5 @@ include asx/make/rules.mak
 # Add dependency to generate the datagram from the config
 src/modbus.cpp : $(DATAGRAM)
 
-# Turn off ULOG logging
-CPPFLAGS += -DULOG_LEVEL=-1
-
 # Clean the datagram file on clean
 CLEAN_FILES += $(DATAGRAM)

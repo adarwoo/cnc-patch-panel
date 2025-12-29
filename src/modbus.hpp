@@ -7,7 +7,6 @@ namespace modbus {
    /// @brief Callback for processing the update inputs and outputs
    using ProcessInputCb = void(*)();
 
-   /// @brief Status of a modbus communication
    enum class CommStatus : int8_t {
       error = -2,
       down = -1,
@@ -20,7 +19,7 @@ namespace modbus {
       struct {
          uint8_t compressor : 1; // Bit0
          uint8_t cool : 1;
-         uint8_t dust : 1; 
+         uint8_t dust : 1;
       };
    };
 

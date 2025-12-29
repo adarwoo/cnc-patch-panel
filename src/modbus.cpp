@@ -27,7 +27,7 @@ namespace modbus {
    reactor::Handle react_to_set_relay;
    reactor::Handle react_to_console; // External handle
 
-   Relays         relays                 = Relays{0};
+   Relays         relays                 = Relays{0b001}; // Default compressor ON
    Switches       switches               = Switches{0};
    Key            key                    = Key{Key::None};
    PneumaticCoils coils                  = PneumaticCoils{0};
@@ -199,6 +199,26 @@ namespace modbus {
    void on_comm_error(uint8_t device_id, asx::modbus::error_t error) {
       auto new_status = (error == asx::modbus::error_t::reply_timeout)
          ? CommStatus::down : CommStatus::error;
+
+      constexpr auto device_name = [](uint8_t device_id) constexpr -> const char* {
+         switch (device_id) {
+         case console_address:         return "Console";
+         case relay_address:           return "Relay";
+         case pneumatic_relay_address: return "Pneumatic";
+         default:                      return "Unknown";
+         }
+      };
+
+      constexpr auto status_name = [](CommStatus status) noexcept {
+         switch(status) {
+            case CommStatus::error: return "error";
+            case CommStatus::down:  return "down";
+            case CommStatus::ok:    return "ok";
+            default:                return "unknown";
+         }
+      };
+
+      ULOG_WARN("Modbus error device {} => {}", device_name(device_id), status_name(new_status));
 
       switch (device_id) {
       case console_address:
