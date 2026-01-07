@@ -35,14 +35,14 @@ namespace modbus {
 
    // Define a union to combine uint16_t with bitfields
    union PneumaticCoils {
-      uint16_t all;
+      uint8_t all;
       struct {
-         uint16_t air_blast : 1; // Bit0
-         uint16_t chuck : 1;
-         uint16_t spindle_clean : 1;
-         uint16_t door_pull : 1;
-         uint16_t chuck_open : 1;
-         uint16_t door_push : 1;
+         uint8_t air_blast : 1; // Bit0
+         uint8_t chuck : 1;
+         uint8_t spindle_clean : 1;
+         uint8_t door_pull : 1;
+         uint8_t chuck_open : 1;
+         uint8_t door_push : 1;
       };
    };
 
@@ -101,7 +101,8 @@ namespace modbus {
    extern Key            key;
    extern PneumaticCoils coils;
    extern ConsoleLeds    console_leds;
-   extern bool           pressure_in;
+   extern bool           pressure_detected;
+   extern bool           water_pump_alarm;
 
    extern CommStatus     relay_comms_status;
    extern CommStatus     pneu_comms_status;

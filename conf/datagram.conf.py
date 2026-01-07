@@ -8,9 +8,9 @@ Modbus({
 
     # Prototypes for the reply callbacks
     "callbacks": {
-        "on_console_reply"   : [(u8, "switches"), (u8, "push_buttons")],
-        "on_pneumatic_reply" : [(u8, "pressure")],
-        "on_relay_reply"     : [],
+        "on_console_reply"    : [(u8, "switches"), (u8, "push_buttons")],
+        "on_relay_reply"      : [],
+        "on_pneumatic_reply"  : [(u8, "readout")],
     },
 
     # Console
@@ -29,7 +29,7 @@ Modbus({
 
     # Pneumatic
     "device@49": [
-        (CUSTOM,                u8(alias="pressure_input"),
+        (CUSTOM,                u8(alias="value"), # The value
                                 "on_pneumatic_reply"),
-    ]
+    ],
 })

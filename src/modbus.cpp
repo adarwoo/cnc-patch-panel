@@ -23,7 +23,7 @@ namespace modbus {
    // Reactor handles
    reactor::Handle react_to_send_beep;
    reactor::Handle react_to_query_console;
-   reactor::Handle react_to_query_pneumatic;
+   reactor::Handle react_to_get_set_pneumatic;
    reactor::Handle react_to_set_relay;
    reactor::Handle react_to_console; // External handle
 
@@ -32,7 +32,8 @@ namespace modbus {
    Key            key                    = Key{Key::None};
    PneumaticCoils coils                  = PneumaticCoils{0};
    ConsoleLeds    console_leds           = ConsoleLeds{0};
-   bool           pressure_in            = bool{false};
+   bool           pressure_detected      = bool{false};
+   bool           water_pump_alarm       = bool{false};
 
    CommStatus     relay_comms_status     = CommStatus::down;
    CommStatus     pneu_comms_status      = CommStatus::down;
@@ -93,12 +94,14 @@ namespace modbus {
 
          // Throttle the number of relay
          if ( prescaler == 2 ) {
+            ULOG_DEBUG2("Queuing relay update: 0x{:02x}", relays.all);
             modbus_master::request_to_send(react_to_set_relay);
          }
 
-         // Throttle the number of pneumatic packets as this is not a priority
-         if ( prescaler == 3 ) {
-            modbus_master::request_to_send(react_to_query_pneumatic);
+         // Pneumatic read every 5 cycles (100ms * 5 = 500ms)
+         if ( prescaler == 4 ) {
+            ULOG_DEBUG2("Controlling pneumatic coils: 0x{:02x}", coils.all);
+            modbus_master::request_to_send(react_to_get_set_pneumatic);
          }
 
          if ( ++prescaler == 5 ) {
@@ -135,10 +138,11 @@ namespace modbus {
    /**
     * Update the pneumatic coils and request the pressures readout
     */
-   void query_pneumatic() {
+   void get_set_pneumatic() {
       Datagram::pack(pneumatic_relay_address);
       Datagram::pack(command_t::custom);
-      Datagram::pack(coils.all);
+      // TODO Datagram::pack(coils.all);
+      Datagram::pack(uint8_t(0)); // Currently no coil is set
    }
 
    /**
@@ -164,8 +168,15 @@ namespace modbus {
     */
    void on_console_reply(uint8_t _switches, uint8_t _key) {
       // Store for the handler to process
+      auto old_switches = switches;
+      auto old_key = key;
       switches = static_cast<Switches>(_switches);
       key = static_cast<Key>(_key);
+
+      // Log changes in switches or key state
+      if (old_switches.all != switches.all || old_key != key) {
+         ULOG_TRACE("Console: switches=0x{:02x} key={}", switches.all, static_cast<uint8_t>(key));
+      }
 
       // Notfiy the external reactor (Stage is 0)
       react_to_console();
@@ -178,8 +189,28 @@ namespace modbus {
     * Process the pneumatic custom modbus message reply.
     * Store the pressure switch state
     */
-   void on_pneumatic_reply(uint8_t switch_state) {
-      pressure_in = switch_state;
+   void on_pneumatic_reply(uint8_t value) {
+      auto pressure_switch_state = static_cast<bool>(value & 0x01);
+      auto water_pump_state = static_cast<bool>(value & 0x02);
+
+      if (pressure_detected != pressure_switch_state) {
+         pressure_detected = pressure_switch_state;
+         ULOG_INFO("Pneumatic pressure change: {}", pressure_detected);
+      }
+
+      if (water_pump_alarm != water_pump_state) {
+         water_pump_alarm = water_pump_state;
+         ULOG_WARN("Pneumatic water pump alarm change: {}", water_pump_alarm);
+      }
+
+      pneu_comms_status = CommStatus::ok;
+   }
+
+   /**
+    * Called when the pneumatic set command was replied OK
+    */
+   void on_pneumatic_set_reply() {
+      ULOG_DEBUG2("Pneumatic set confirmed: coils=0x{:02x}", coils.all);
 
       // Set the status to OK
       pneu_comms_status = CommStatus::ok;
@@ -189,6 +220,8 @@ namespace modbus {
     * Called when the relay replied OK
     */
    void on_relay_reply() {
+      ULOG_DEBUG2("Relay update confirmed: 0x{:02x}", relays.all);
+
       // Set the status to OK
       relay_comms_status = CommStatus::ok;
    }
@@ -240,6 +273,7 @@ namespace modbus {
     * Request a 'beep' from the console
     */
    void beep() {
+      ULOG_INFO("Beep requested");
       // Request to transmit a beep request
       modbus_master::request_to_send(react_to_send_beep);
    }
@@ -259,7 +293,7 @@ namespace modbus {
       react_to_send_beep            = reactor::bind(beep_request);
 
       // Pneumatic requests are next
-      react_to_query_pneumatic      = reactor::bind(query_pneumatic);
+      react_to_get_set_pneumatic    = reactor::bind(get_set_pneumatic);
       react_to_query_console        = reactor::bind(query_console);
       react_to_set_relay            = reactor::bind(set_relay);
       react_to_console              = react_on_console_reply;
@@ -270,6 +304,6 @@ namespace modbus {
       modbus_master::init(reactor::bind<HandlerFn>(on_comm_error));
 
       // Start the modbus queries after 2s (relay will take 5)
-      reactor::bind(on_modbus_cycle).repeat(2s, 20ms);
+      reactor::bind(on_modbus_cycle).repeat(2s, 100ms);
    }
 }  // namespace modbus

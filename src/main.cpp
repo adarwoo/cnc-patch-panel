@@ -35,8 +35,8 @@ void setup_modbus_activity_leds() {
    // Pulse duration
 
    // Define a custom duration type representing one tick of the PIT/64 clock
-   using tick_duration = duration<int64_t, std::ratio<1, 32768 / 64>>;   
-   
+   using tick_duration = duration<int64_t, std::ratio<1, 32768 / 64>>;
+
    // Set the pulse duration
    constexpr auto pulse_duration = duration_cast<tick_duration>(4ms);
 
@@ -48,12 +48,12 @@ void setup_modbus_activity_leds() {
 
    EVSYS.USERCCLLUT0A  = EVSYS_USER_CHANNEL0_gc;     // LUT2-EVENTA  = Ch0 [Rx/Tx activity]
    EVSYS.USERCCLLUT0B  = EVSYS_USER_CHANNEL1_gc;     // LUT2-EVENTB  = Ch1 [XDIR]
-  
+
    EVSYS.USERTCB0CAPT  = EVSYS_USER_CHANNEL2_gc;     // TCB0 Capture = Ch2 [LUT2-OUT=RxTx & ~XDIR]
    EVSYS.USERTCB0COUNT = EVSYS_USER_CHANNEL3_gc;     // TCB0 count uses channel 3
    EVSYS.USERTCB1CAPT  = EVSYS_USER_CHANNEL1_gc;     // TCB1 Capture = Ch1 [XDIR]
    EVSYS.USERTCB1COUNT = EVSYS_USER_CHANNEL3_gc;     // TCB1 count uses channel 3
-   
+
    // LUT0 configurations : IN0[A]=Ch0/RTX | IN1[B]=Ch1/XDIR | IN2[-] => Channel 2
    CCL.LUT0CTRLB = CCL_INSEL0_EVENTA_gc | CCL_INSEL1_EVENTB_gc;
    CCL.LUT0CTRLC = 0;
@@ -82,9 +82,6 @@ void setup_modbus_activity_leds() {
 int main()
 {
    ULOG_MILE("CNC Patch starting");
-
-   // Init our unique debug pin called TRACE
-   DEBUG_TRACE.init(dir_t::out, value_t::low);
 
    // Initialse the patch management (i2c, gpio and modbus sequencer)
    patch::init();

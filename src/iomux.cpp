@@ -1,6 +1,8 @@
 #include <array>
 #include <chrono>
 
+#include <ulog.h>
+
 #include <asx/chrono.hpp>
 #include <asx/reactor.hpp>
 #include <asx/timer.hpp>

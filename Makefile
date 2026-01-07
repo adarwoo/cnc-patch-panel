@@ -1,5 +1,5 @@
 TOP:=.
-ARCH:=attiny3227
+ARCH:=attiny3226
 BIN:=patch_panel
 DATAGRAM:=conf/datagram.hpp
 

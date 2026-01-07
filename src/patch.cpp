@@ -63,8 +63,15 @@ namespace patch {
       switch ( stage ) {
       case 0:
          // Sync pneumatics
-         iomux::outputs.air_pressure_low_alarm = modbus::pressure_in;
+         iomux::outputs.chuck_pressure_detected = modbus::pressure_detected;
          modbus::coils.chuck = iomux::inputs.chuck_pressure;
+
+         // Log ES state changes
+         static bool prev_es = false;
+         if (prev_es != iomux::inputs.es) {
+            ULOG_WARN("Emergency Stop: {}", iomux::inputs.es ? "ACTIVE" : "cleared");
+            prev_es = iomux::inputs.es;
+         }
 
          //
          // Drive MPU GPIOs
@@ -98,7 +105,7 @@ namespace patch {
       case 2:
          // Air LEDs
          iomux::led::set(iomux::led::Id::clean,         get_clean_led_status());
-         iomux::led::set(iomux::led::Id::low_pressure,  modbus::pressure_in);
+         iomux::led::set(iomux::led::Id::low_pressure,  modbus::pressure_detected);
          iomux::led::set(iomux::led::Id::chuck,         iomux::inputs.chuck_pressure);
 
          // Modbus comms LEDs
@@ -150,16 +157,46 @@ namespace patch {
       iomux::Outputs v{0};
 
       switch (modbus::key) {
-      case modbus::Key::Start:  v.button_start = 1;         break;
-      case modbus::Key::Stop:   v.button_stop = 1;          break;
-      case modbus::Key::Homing: v.button_home = 1;          break;
-      case modbus::Key::Goto0:  v.button_go_to_home = 1;    break;
-      case modbus::Key::Park:   v.button_go_to_parking = 1; break;
-      case modbus::Key::Chuck:  v.chuck_clamp_unclamp = 1;  break;
-      case modbus::Key::Door:   v.door_open_close = 1;      break;
-      case modbus::Key::P1:     v.autoload_g_code1 = 1;     break;
-      case modbus::Key::P2:     v.autoload_g_code1 = 1;     break;
-      case modbus::Key::P3:     v.autoload_g_code1 = 1;     break;
+      case modbus::Key::Start:
+         ULOG_INFO("Key: START");
+         v.button_start = 1;
+         break;
+      case modbus::Key::Stop:
+         ULOG_INFO("Key: STOP");
+         v.button_stop = 1;
+         break;
+      case modbus::Key::Homing:
+         ULOG_INFO("Key: HOMING");
+         v.button_home = 1;
+         break;
+      case modbus::Key::Goto0:
+         ULOG_INFO("Key: GOTO0");
+         v.button_go_to_home = 1;
+         break;
+      case modbus::Key::Park:
+         ULOG_INFO("Key: PARK");
+         v.button_go_to_parking = 1;
+         break;
+      case modbus::Key::Chuck:
+         ULOG_INFO("Key: CHUCK");
+         v.chuck_clamp_unclamp = 1;
+         break;
+      case modbus::Key::Door:
+         ULOG_INFO("Key: DOOR");
+         v.door_open_close = 1;
+         break;
+      case modbus::Key::P1:
+         ULOG_INFO("Key: P1");
+         v.autoload_g_code1 = 1;
+         break;
+      case modbus::Key::P2:
+         ULOG_INFO("Key: P2");
+         v.autoload_g_code1 = 1;
+         break;
+      case modbus::Key::P3:
+         ULOG_INFO("Key: P3");
+         v.autoload_g_code1 = 1;
+         break;
       default:
          break;
       }
@@ -169,7 +206,19 @@ namespace patch {
       //
       //  Map the switches
       //
+      // Log door state changes
+      static bool prev_door_down = false;
+      if (prev_door_down != iomux::inputs.door_is_down) {
+         ULOG_INFO("Door: {}", iomux::inputs.door_is_down ? "DOWN" : "UP");
+         prev_door_down = iomux::inputs.door_is_down;
+      }
 
+      // Log chuck pressure changes
+      static bool prev_chuck = false;
+      if (prev_chuck != iomux::inputs.chuck_pressure) {
+         ULOG_INFO("Chuck pressure: {}", iomux::inputs.chuck_pressure ? "ON" : "OFF");
+         prev_chuck = iomux::inputs.chuck_pressure;
+      }
       // If the release switch is on - set the matching OC output
       Pin(ISO_OUT_RELEASE_STEPPER).set( modbus::switches.release );
 
@@ -213,8 +262,15 @@ namespace patch {
       //
       // Drive the relays from the switch and other items
       //
+      static uint8_t prev_relays = 0;
       modbus::relays.cool = modbus::switches.cool || iomux::inputs.spindle_is_on;
       modbus::relays.dust = modbus::switches.dust || iomux::inputs.spindle_is_on;
+
+      if (prev_relays != modbus::relays.all) {
+         ULOG_DEBUG0("Relays updated: 0x{:02x}",
+            modbus::relays.all);
+         prev_relays = modbus::relays.all;
+      }
 
       //
       // Process the push buttons LEDs
@@ -249,7 +305,7 @@ namespace patch {
          // For the door - use the state machine output. Blinks when the
          // door is moving.
          modbus::console_leds.door = (modbus::key == modbus::Key::Door);
-         
+
          // Set all other LED's based on the push-button position
          modbus::console_leds.park  = (modbus::key == modbus::Key::Park);
          modbus::console_leds.goto0 = (modbus::key == modbus::Key::Goto0);
@@ -277,7 +333,7 @@ namespace patch {
 
       // Turn the compressor on after 12 seconds
       reactor::bind([]() {
-         ULOG_MILE("Turning compressor on");
+         ULOG_INFO("Turning compressor on");
          modbus::relays.compressor = 1;
       }).delay(COMPRESSOR_START_DELAY);
    }

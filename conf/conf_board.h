@@ -8,7 +8,7 @@
 /************************************************************************/
 /* Functional I/Os                                                      */
 /************************************************************************/
-#define ISO_OUT_ES                  IOPORT(B, 2)
+#define ISO_OUT_ES                  IOPORT(C, 3)
 #define ISO_OUT_TOWER_LIGHT_RED     IOPORT(B, 3)
 #define ISO_OUT_TOWER_LIGHT_YELLOW  IOPORT(B, 4)
 #define ISO_OUT_TOWER_LIGHT_GREEN   IOPORT(B, 5)
@@ -36,8 +36,3 @@
 /* Debug pins                                                           */
 /************************************************************************/
 #define DEBUG_REACTOR_BUSY          IOPORT(A, 2)
-#define DEBUG_TRACE                 IOPORT(C, 3)
-
-// To quick debug with trace pin
-#define TRACE_ON                    {asm("sbi 9,3");}
-#define TRACE_OFF                   {asm("cbi 9,3");}

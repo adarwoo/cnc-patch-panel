@@ -86,7 +86,7 @@ namespace iomux {
          uint16_t chuck_clamp_unclamp    : 1;
          uint16_t door_open_close        : 1;
          uint16_t reserved               : 4;
-         uint16_t air_pressure_low_alarm : 1;
+         uint16_t chuck_pressure_detected : 1;
          uint16_t door_sensor_input      : 1;
          uint16_t autoload_g_code1       : 1;
          uint16_t autoload_g_code2       : 1;
